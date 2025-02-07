@@ -9,3 +9,14 @@ export interface DifficultyLevel {
   textClass: string;
   arrowClass: string;
 }
+
+export type Cell = {
+  value: number;
+  initial: boolean;
+  hint: boolean;
+};
+
+export type ErrorPositon = {
+  column: number;
+  row: number;
+};

@@ -11,7 +11,7 @@
       ></Button>
     </div>
 
-    <Button class="py-2 flex gap-2">
+    <Button class="py-2 flex gap-2" @click="$emit('take-hint')">
       <LightBuldIcon></LightBuldIcon>
       <span> Hint ({{ remainingHints }})</span>
     </Button>
@@ -19,19 +19,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { DifficultyName } from "../types/types";
 import Button from "../base/Button.vue";
 import PauseIcon from "../icons/PauseIcon.vue";
 import LightBuldIcon from "../icons/LightBuldIcon.vue";
 
-const { selectedLevel, timer } = defineProps<{
+const { selectedLevel, timer, score, remainingHints } = defineProps<{
   selectedLevel: DifficultyName | null;
   timer: number;
+  score: number;
+  remainingHints: number;
 }>();
 
 defineEmits<{
   (event: "pause-game"): void;
+  (event: "take-hint"): void;
 }>();
 
 const formatTimer = computed(() => {
@@ -50,12 +53,4 @@ const formatTimer = computed(() => {
 
   return `${formattedMinutes}:${formattedSeconds}`;
 });
-
-const defaultHints = 10;
-
-const score = ref(0);
-
-const remainingHints = ref(defaultHints);
-
-function pauseGame() {}
 </script>
