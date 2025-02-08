@@ -2,7 +2,7 @@
   <transition name="modal-fade">
     <div class="fixed inset-0 bg-black/30 flex justify-center items-center">
       <div
-        class="bg-white shadow-2xl overflow-x-auto flex flex-col rounded-md w-full max-w-lg px-8"
+        class="bg-white shadow-2xl overflow-x-auto flex flex-col rounded-md w-full max-w-lg px-8 py-4"
         role="dialog"
         aria-labelledby="modalTitle"
         aria-describedby="modalDescription"

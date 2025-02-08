@@ -1,29 +1,43 @@
 <template>
-  <div class="w-full h-full">
-    <div class="grid grid-cols-9 bg-white rounded-lg shadow-md">
-      <div v-for="(row, indexRow) in board" :key="indexRow">
-        <div
-          v-for="(cell, indexColumn) in row"
-          :key="indexColumn"
-          class="p-4 border-r border-b border-gray-200 hover:bg-gray-200 w-16 aspect-square items-center justify-center focus:border-black focus:border"
-          :class="[
-            getBorderStyle(indexRow + 1, indexColumn + 1),
-            getBackgroundColor(indexRow, indexColumn, cell),
-          ]"
-          @keypress="(e) => fillCell(e, indexRow, indexColumn, cell)"
-          :tabindex="cell.initial || cell.hint ? -1 : 0"
+  <div class="grid grid-cols-9 bg-white rounded-lg shadow-md">
+    <div v-for="(row, indexRow) in board" :key="indexRow">
+      <div
+        v-for="(cell, indexColumn) in row"
+        :key="indexColumn"
+        class="border-r border-b border-gray-200 hover:bg-gray-200 transition-all ease-in-out duration-200 w-6 sm:w-10 md:w-14 aspect-square flex items-center justify-center focus:bg-indigo-200"
+        :class="[
+          getBorderStyle(indexRow + 1, indexColumn + 1),
+          getBackgroundColor(indexRow, indexColumn, cell),
+        ]"
+        @keypress="(e) => fillCell(e, indexRow, indexColumn, cell)"
+        :tabindex="cell.initial || cell.hint ? -1 : 0"
+        ref="cells"
+      >
+        <span
+          v-if="cell.value !== 0 || cell.draftValue !== 0"
+          :class="{ italic: cell.value === 0 && cell.draftValue }"
+          class="text-sm md:text-xl"
         >
-          <span v-if="cell.value !== 0">
-            {{ cell.value }}
-          </span>
-        </div>
+          {{ cell.value !== 0 ? cell.value : cell.draftValue }}
+        </span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Cell, ErrorPositon } from "../types/types";
+import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
+import { AnimatedAreasType, Cell, CellPosition } from "../types/types";
+import gsap from "gsap";
+
+const { board, errorPositions, initialBoard } = defineProps<{
+  board: Cell[][];
+  initialBoard: Cell[][];
+  errorPositions: Map<string, CellPosition>;
+}>();
+const emit = defineEmits<{
+  (event: "update-board", row: number, column: number, value: number): void;
+}>();
 
 function getBackgroundColor(row: number, column: number, cell: Cell) {
   if (cell.hint) {
@@ -34,7 +48,7 @@ function getBackgroundColor(row: number, column: number, cell: Cell) {
     return "bg-gray-100";
   }
 
-  if (props.errorPositions.has(`${row}${column}`)) {
+  if (errorPositions.has(`${row}${column}`)) {
     return "bg-red-200";
   }
 }
@@ -68,13 +82,88 @@ function getBorderStyle(row: number, column: number) {
   return dynamicClass;
 }
 
-const props = defineProps<{
-  board: Cell[][] | undefined;
-  errorPositions: Map<string, ErrorPositon>;
-}>();
-const emit = defineEmits<{
-  (event: "update-board", row: number, column: number, value: number): void;
-}>();
+const animatedAreas = computed(() => {
+  const matches: AnimatedAreasType[] = [];
+
+  for (let i = 0; i < board.length; ++i) {
+    // Check line match
+    const isLineMatching = board[i].every(
+      (cell, j) => cell.value === initialBoard[i][j].value
+    );
+
+    // Check column match
+    const isColumnMatching = board.every(
+      (row, j) => row[i].value === initialBoard[j][i].value
+    );
+
+    if (isLineMatching) {
+      matches.push({ key: "line", index: i });
+    }
+
+    if (isColumnMatching) {
+      matches.push({ key: "column", index: i });
+    }
+  }
+
+  // Check 3x3 squares
+  for (let square = 0; square < 9; square++) {
+    const startRow = Math.floor(square / 3) * 3;
+    const startCol = (square % 3) * 3;
+    let isSquareMatching = true;
+
+    // Compare each cell in the 3x3 square
+    for (let i = 0; i < 3 && isSquareMatching; i++) {
+      for (let j = 0; j < 3 && isSquareMatching; j++) {
+        const row = startRow + i;
+        const col = startCol + j;
+        if (board[row][col].value !== initialBoard[row][col].value) {
+          isSquareMatching = false;
+        }
+      }
+    }
+
+    if (isSquareMatching) {
+      matches.push({ key: "square", index: square });
+    }
+  }
+
+  return matches;
+});
+
+// watch(
+//   () => animatedAreas,
+//   (newValue) => {
+//     cells.value.forEach((cell, index) => {
+//       timeline.to(cell, {
+//         backgroundColor: "#3B82F6", // Tailwind blue-500
+//         color: "white",
+//         duration: 0.3,
+//       });
+//     });
+//   },
+//   { deep: true }
+// );
+
+const cells = ref([]);
+// onMounted(() => {
+//   console.log(cells.value);
+
+//   // Add each cell to the timeline
+//   cells.value.forEach((cell, index) => {
+//     timeline.to(cell, {
+//       backgroundColor: "#3B82F6", // Tailwind blue-500
+//       color: "white",
+//       duration: 0.3,
+//     });
+//   });
+
+//   // Fade out all cells
+//   timeline.to(cells.value, {
+//     backgroundColor: "transparent",
+//     color: "black",
+//     duration: 0.5,
+//   });
+// });
 
 function fillCell(e: KeyboardEvent, row: number, column: number, cell: Cell) {
   if (cell.initial) {

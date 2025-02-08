@@ -14,9 +14,23 @@ export type Cell = {
   value: number;
   initial: boolean;
   hint: boolean;
+  draftValue: number;
 };
 
-export type ErrorPositon = {
+export type CellPosition = {
   column: number;
   row: number;
+};
+
+export type CellPositionWithValue = {
+  value: number;
+  draftValue: number;
+  draft: boolean;
+} & CellPosition;
+
+export type ButtonVariant = "primary" | "secondary" | "ghost";
+
+export type AnimatedAreasType = {
+  key: string;
+  index: number;
 };

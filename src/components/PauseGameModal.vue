@@ -7,25 +7,27 @@
 
     <template #body>
       <div class="flex flex-col gap-4">
-        <Button
+        <BaseButton
           @click="$emit('resume-play')"
-          className="w-full px-4 py-3 cursor-pointer text-white font-medium bg-emerald-500 hover:bg-emerald-600 rounded-xl transition-colors shadow-lg shadow-emerald-500/20"
+          variant="secondary"
+          class="text-white font-medium bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-emerald-500/20"
         >
           <span>Resume Game</span>
-        </Button>
-        <Button
+        </BaseButton>
+        <BaseButton
           @click="$emit('start-new')"
-          className="w-full px-4 py-3 text-gray-700 font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+          variant="secondary"
+          class="text-gray-700 font-medium bg-gray-100 hover:bg-gray-200 transition-colors"
         >
           <span>Start new game</span>
-        </Button>
+        </BaseButton>
       </div>
     </template>
   </Modal>
 </template>
 
 <script setup lang="ts">
-import Button from "../base/Button.vue";
+import BaseButton from "../base/BaseButton.vue";
 import Modal from "../base/Modal.vue";
 defineEmits<{
   (event: "start-new"): void;

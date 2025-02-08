@@ -1,27 +1,37 @@
 <template>
   <div
-    class="w-full py-4 flex justify-between border-y border-y-gray-200 items-center px-8"
+    class="w-full py-4 flex justify-between border-y border-y-gray-200 items-center sm:px-8 px-2 gap-x-2"
   >
-    <p class="font-semibold text-gray-700">Level: {{ selectedLevel ?? "-" }}</p>
-    <p class="font-semibold text-gray-700">Score: {{ score }}</p>
-    <div class="flex items-center gap-4">
-      <p class="font-semibold text-gray-700">Time Spent: {{ formatTimer }}</p>
-      <Button aria-label="pause game" @click="$emit('pause-game')"
+    <p class="responsive-text font-semibold text-gray-700">
+      Level: {{ selectedLevel ?? "-" }}
+    </p>
+    <p class="responsive-text font-semibold text-gray-700">
+      Score: {{ score }}
+    </p>
+    <div class="flex items-center sm:gap-x-4 gap-x-2">
+      <p class="responsive-text font-semibold text-gray-700">
+        Time Spent: {{ formatTimer }}
+      </p>
+      <BaseButton
+        aria-label="pause game"
+        variant="ghost"
+        @click="$emit('pause-game')"
         ><span> <PauseIcon></PauseIcon> </span
-      ></Button>
+      ></BaseButton>
     </div>
 
-    <Button class="py-2 flex gap-2" @click="$emit('take-hint')">
-      <LightBuldIcon></LightBuldIcon>
-      <span> Hint ({{ remainingHints }})</span>
-    </Button>
+    <BaseButton variant="ghost" @click="$emit('take-hint')">
+      <span class="flex sm:gap-x-2 gap-x-1 responsive-text items-center"
+        ><LightBuldIcon></LightBuldIcon> Hint ({{ remainingHints }})</span
+      >
+    </BaseButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { DifficultyName } from "../types/types";
-import Button from "../base/Button.vue";
+import BaseButton from "../base/BaseButton.vue";
 import PauseIcon from "../icons/PauseIcon.vue";
 import LightBuldIcon from "../icons/LightBuldIcon.vue";
 

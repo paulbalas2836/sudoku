@@ -1,32 +1,57 @@
 <template>
-  <div class="justify-center items-center flex flex-col gap-8">
+  <div class="justify-center flex flex-col gap-8">
     <Topbar
-      :remainingHints="remainingHints"
+      :remaining-hints="remainingHints"
       :score="score"
-      :selectedLevel="selectedLevel"
+      :selected-level="selectedLevel"
       :timer="timer"
       @take-hint="takeHint"
       @pause-game="pauseGame"
     ></Topbar>
-    <div class="flex gap-8">
+    <div class="flex gap-2 sm:gap-8 sm:flex-row flex-col">
       <SudokuBoard
         :board="board"
-        :errorPositions="errorPositions"
+        :initial-board="initialBoard"
+        :error-positions="errorPositions"
         @update-board="updateSudokuBoard"
       ></SudokuBoard>
+      <div class="flex flex-col gap-2 sm:gap-4">
+        <BaseButton @click="undoAction" variant="primary">
+          <span>Undo</span></BaseButton
+        >
+        <BaseButton @click="redoAction" variant="primary"
+          ><span>Redo</span></BaseButton
+        >
+        <BaseButton @click="toggleDraftMode" variant="primary">
+          <span>Draft: {{ isDraft ? "On" : "Off" }}</span></BaseButton
+        >
+        <div class="hidden sm:block">
+          <Leaderboard></Leaderboard>
+        </div>
+      </div>
+    </div>
+    <AvailableDigits
+      :board="board"
+      :initial-board="initialBoard"
+      @end-game="endGame"
+    ></AvailableDigits>
+    <div class="sm:hidden block">
       <Leaderboard></Leaderboard>
     </div>
-    <AvailableDigits :board="board"></AvailableDigits>
   </div>
-  <div v-if="showModal">
-    <StartGameModal @select="SelectLevel"></StartGameModal>
+  <div v-if="showSelectLevelModal">
+    <StartGameModal @select="selectLevel"></StartGameModal>
   </div>
 
-  <div v-if="gamePaused">
+  <div v-if="showGamePausedModal">
     <PauseGameModal
       @resume-play="resumeGame"
       @start-new="startNewGame"
     ></PauseGameModal>
+  </div>
+
+  <div v-if="showEndGameModal">
+    <EndGamePopup :score="score" @start-new="startNewGame"></EndGamePopup>
   </div>
 </template>
 
@@ -36,37 +61,73 @@ import AvailableDigits from "./components/AvailableDigits.vue";
 import SudokuBoard from "./components/SudokuBoard.vue";
 import Topbar from "./components/Topbar.vue";
 import StartGameModal from "./components/StartGameModal.vue";
-import { Cell, DifficultyName, ErrorPositon } from "./types/types";
+import { Cell, DifficultyName, CellPosition } from "./types/types";
 import PauseGameModal from "./components/PauseGameModal.vue";
 import Leaderboard from "./components/Leaderboard.vue";
-import { Sudoku } from "./sudokuGenerator";
-import { createBoard, deepCopy, generateRandomNumber } from "./utility";
+import { Sudoku } from "./utility/sudokuGenerator";
+import BaseButton from "./base/BaseButton.vue";
+import { deepCopy, generateRandomNumber } from "./utility/utility";
+import EndGamePopup from "./components/EndGamePopup.vue";
+import { GameHistory } from "./utility/gameHistory";
 
-const ONE_HOUR_IN_SECONDS = 3600;
-const gamePaused = ref(false);
-const timer = ref(0);
+const ONE_HOUR_IN_SECONDS: number = 3600;
+const MAX_TIME_POINTS: number = 500;
+
+const timer = ref<number>(0);
+const showGamePausedModal = ref<boolean>(false);
+const showSelectLevelModal = ref<boolean>(false);
 const intervalReference = ref<ReturnType<typeof setInterval>>();
 
-function start() {
+const DEFAULT_HINTS: number = 10;
+const remainingHints = ref<number>(DEFAULT_HINTS);
+
+const sudokuBoardInstance = new Sudoku();
+const initialBoard = ref<Cell[][]>(sudokuBoardInstance.getInitialBoard());
+const board = ref<Cell[][]>(sudokuBoardInstance.getInitialBoard());
+const selectedLevel = ref<DifficultyName | null>(null);
+
+const errorPositions = ref<Map<string, CellPosition>>(new Map());
+
+const score = ref<number>(0);
+
+const undoRedoLinkedList = ref<GameHistory>(new GameHistory());
+
+const isDraft = ref<boolean>(false);
+
+const showEndGameModal = ref<boolean>(true);
+
+/**
+ * Starts the game timer.
+ * - Increments `timer.value` every second.
+ * - Stops when reaching `ONE_HOUR_IN_SECONDS` and displays a modal.
+ */
+function start(): void {
   intervalReference.value = setInterval(() => {
     if (timer.value < ONE_HOUR_IN_SECONDS) {
       timer.value++;
     } else {
       clearInterval(intervalReference.value);
-      showModal.value = true;
+      showSelectLevelModal.value = true;
     }
   }, 1000);
 }
 
-function pauseGame() {
-  gamePaused.value = true;
+/**
+ * Pauses the game by stopping the timer and display the pause game modal.
+ */
+function pauseGame(): void {
+  showGamePausedModal.value = true;
 
   //stop the timer
   clearInterval(intervalReference.value);
 }
 
-function handleVisibilityChange() {
-  if (document.hidden && !showModal.value) {
+/**
+ * Handles visibility changes of the document.
+ * - Pauses the game if the document becomes hidden (e.g., switching tabs).
+ */
+function handleVisibilityChange(): void {
+  if (document.hidden && !showSelectLevelModal.value) {
     pauseGame();
   }
 }
@@ -79,32 +140,27 @@ onUnmounted(() => {
   document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 
-function resumeGame() {
-  gamePaused.value = false;
+/**
+ * Resumes the game by closing the pause modal and restarting the timer.
+ */
+function resumeGame(): void {
+  showGamePausedModal.value = false;
 
   //create a new timer
   start();
 }
 
-const showModal = ref(true);
-
-function closeModal() {
-  showModal.value = false;
-}
-
-function startNewGame() {
-  showModal.value = true;
+function startNewGame(): void {
+  showSelectLevelModal.value = true;
+  showEndGameModal.value = false;
 
   //reset data
-  gamePaused.value = false;
+  showGamePausedModal.value = false;
   timer.value = 0;
   remainingHints.value = DEFAULT_HINTS;
 }
 
-const DEFAULT_HINTS = 10;
-const remainingHints = ref(DEFAULT_HINTS);
-
-function takeHint() {
+function takeHint(): void {
   if (remainingHints.value <= 0 || !board.value) {
     return;
   }
@@ -161,12 +217,7 @@ function correctNextCell(
   return false;
 }
 
-const sudokuBoardInstance = new Sudoku();
-const initialBoard = ref<Cell[][]>(createBoard());
-const board = ref<Cell[][]>();
-const selectedLevel = ref<DifficultyName | null>(null);
-
-function SelectLevel(level: DifficultyName) {
+function selectLevel(level: DifficultyName): void {
   selectedLevel.value = level;
 
   // generate a new sudoku board based on the selected level
@@ -178,34 +229,128 @@ function SelectLevel(level: DifficultyName) {
   timer.value = 0;
   start();
 
-  closeModal();
+  showSelectLevelModal.value = false;
 }
 
-const errorPositions = ref<Map<string, ErrorPositon>>(new Map());
-const score = ref(0);
-function updateSudokuBoard(row: number, column: number, value: number) {
-  if (!board.value) {
+function addError(value: number, row: number, column: number): void {
+  if (value === 0) {
     return;
   }
 
-  board.value[row][column].value = value;
+  if (value !== initialBoard.value[row][column].value) {
+    const key = `${row}${column}`;
+    errorPositions.value.set(key, { row, column });
+  }
+}
 
-  const mapKey = `${row}${column}`;
+function clearError(row: number, column: number): void {
+  const key = `${row}${column}`;
+  if (errorPositions.value.has(key)) {
+    errorPositions.value.delete(key);
+  }
+}
+
+function updateSudokuBoard(row: number, column: number, value: number): void {
+  // no need to add draft value if the board already has a value
+  if (board.value[row][column].value !== 0 && isDraft.value) {
+    return;
+  }
+
+  const draftValue = isDraft.value ? value : 0;
+  const actualValue = isDraft.value ? 0 : value;
+
+  updateBoard(actualValue, row, column, draftValue, isDraft.value);
+
+  //we add the cell to the undo linked list
+  undoRedoLinkedList.value.addNode(
+    actualValue,
+    row,
+    column,
+    draftValue,
+    isDraft.value
+  );
+
+  // we don't want to change the score or add errors if it's in draft mode
+  if (isDraft.value) {
+    return;
+  }
+
   if (value === initialBoard.value[row][column].value) {
     // 5 points / right guess
     score.value += 5;
 
     //clear error map if any error
-    if (errorPositions.value.has(mapKey)) {
-      errorPositions.value.delete(mapKey);
-    }
+    clearError(row, column);
     return;
   }
 
   // add error if any mistake has been found
-  errorPositions.value.set(`${row}${column}`, { row, column });
+  addError(value, row, column);
 
   // -1 point / mistake
   score.value--;
+}
+
+function updateBoard(
+  value: number,
+  row: number,
+  column: number,
+  draftValue: number,
+  draft: boolean
+): void {
+  board.value[row][column].value = value;
+
+  if (draft) {
+    board.value[row][column].draftValue = draftValue;
+  }
+}
+
+function undoAction() {
+  if (!undoRedoLinkedList.value.canUndo()) {
+    return;
+  }
+
+  const prevValue = undoRedoLinkedList.value.undo();
+  if (!prevValue) {
+    return;
+  }
+
+  const { row, column, draftValue, draft } = prevValue;
+  //we clear the board, in case it's a draft we will clear the draft value too, we always clear the actual value since you cannot add a draft value over it.
+  updateBoard(0, row, column, draft ? 0 : draftValue, draft);
+
+  // we clear the error if we had any on that position
+  clearError(row, column);
+}
+
+function redoAction(): void {
+  if (!undoRedoLinkedList.value.canRedo()) {
+    return;
+  }
+
+  const nextValue = undoRedoLinkedList.value.redo();
+
+  if (!nextValue) {
+    return;
+  }
+
+  const { value, row, column, draftValue, draft } = nextValue;
+
+  const actualValue = draft ? 0 : value;
+  const newDraftValue = draft ? draftValue : 0;
+  updateBoard(actualValue, row, column, newDraftValue, draft);
+
+  //if the redo value was an error we should display it
+  addError(value, row, column);
+}
+
+function toggleDraftMode(): void {
+  isDraft.value = !isDraft.value;
+}
+
+function endGame(): void {
+  showEndGameModal.value = true;
+
+  score.value += MAX_TIME_POINTS - timer.value;
 }
 </script>

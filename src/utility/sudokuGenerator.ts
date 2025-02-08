@@ -1,12 +1,13 @@
-import { DifficultyName, Cell } from "./types/types";
+import { DifficultyName, Cell } from "../types/types";
 import { createBoard, deepCopy, generateRandomNumber } from "./utility";
 
 export class Sudoku {
-  private board?: Cell[][];
+  private board: Cell[][];
   private initialBoard: Cell[][];
 
   constructor() {
     this.initialBoard = createBoard();
+    this.board = createBoard();
   }
 
   private shuffle(array: number[]): number[] {

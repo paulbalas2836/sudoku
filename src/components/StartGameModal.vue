@@ -5,11 +5,12 @@
     </template>
     <template #body>
       <div class="space-y-3">
-        <Button
+        <BaseButton
           v-for="level in difficultyLevels"
           :key="level.name"
           @click="selectLevel(level.name)"
-          class="w-full group hover:scale-[1.02] transition-transform"
+          variant="secondary"
+          class="group hover:scale-[1.02] transition-transform"
         >
           <div
             class="flex items-center p-4 rounded-xl transition-colors"
@@ -33,7 +34,7 @@
               →
             </span>
           </div>
-        </Button>
+        </BaseButton>
       </div>
     </template>
   </Modal>
@@ -46,7 +47,7 @@ import FlameIcon from "../icons/FlameIcon.vue";
 import StartIcon from "../icons/StartIcon.vue";
 import { DifficultyLevel, DifficultyName } from "../types/types";
 import Modal from "../base/Modal.vue";
-import Button from "../base/Button.vue";
+import BaseButton from "../base/BaseButton.vue";
 
 const emit = defineEmits<{
   (event: "select", difficulty: DifficultyName): void;

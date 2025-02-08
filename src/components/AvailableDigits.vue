@@ -1,39 +1,63 @@
 <template>
   <div class="flex flex-col gap-4 mt-auto">
-    <p class="self-start text-gray-600">Available Digits:</p>
-    <div class="flex gap-4 flex-wrap">
+    <p class="self-start text-gray-600 font-medium">Available Digits:</p>
+    <div class="flex gap-3 flex-wrap justify-between">
       <div
         v-for="(remaining, index) in availableDigits"
         :key="index"
-        class="p-4 border border-gray-300 bg-gray-100 w-16 aspect-square"
+        class="w-10 md:w-16 sm:w-14 aspect-square rounded-lg bg-white border border-gray-300 transition duration-200 flex items-center justify-center"
+        :class="{ 'opacity-50 cursor-default': remaining === 0 }"
       >
-        <p
+        <span
           class="font-bold text-xl"
-          :class="{ 'text-gray-300': remaining === 0 }"
+          :class="{
+            'text-gray-400': remaining === 0,
+            'text-gray-800': remaining > 0,
+          }"
         >
           {{ index + 1 }}
-        </p>
+        </span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { Cell } from "../types/types";
 
-const { board } = defineProps<{ board?: Cell[][] }>();
+const { board, initialBoard } = defineProps<{
+  board: Cell[][];
+  initialBoard: Cell[][];
+}>();
+const emit = defineEmits<{
+  (event: "end-game"): void;
+}>();
 
 const availableDigits = computed<number[]>(() => {
-  const list = new Array(9).fill(8);
+  const list = new Array(9).fill(9);
   if (!board) return list;
 
-  board.forEach((row) =>
-    row.forEach((cell) => {
-      if (cell.value !== 0) list[cell.value - 1]--;
+  board.forEach((row, rowIndex) =>
+    row.forEach((cell, columnIndex) => {
+      if (
+        cell.value !== 0 &&
+        initialBoard[rowIndex][columnIndex].value === cell.value
+      )
+        list[cell.value - 1]--;
     })
   );
 
   return list;
 });
+
+watch(
+  () => availableDigits,
+  () => {
+    if (availableDigits.value.every((el) => el === 0)) {
+      emit("end-game");
+    }
+  },
+  { deep: true }
+);
 </script>

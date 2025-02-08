@@ -1,4 +1,4 @@
-import { Cell } from "./types/types";
+import { Cell } from "../types/types";
 
 export function deepCopy<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -14,7 +14,12 @@ export function deepCopy<T>(value: T): T {
 
 export function createBoard(): Cell[][] {
   return Array.from({ length: 9 }, () =>
-    Array.from({ length: 9 }, () => ({ value: 0, initial: true, hint: false }))
+    Array.from({ length: 9 }, () => ({
+      value: 0,
+      initial: true,
+      hint: false,
+      draftValue: 0,
+    }))
   );
 }
 
