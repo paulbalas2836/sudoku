@@ -58,7 +58,7 @@ import Modal from "../base/Modal.vue";
 import BaseButton from "../base/BaseButton.vue";
 import TrophyIcon from "../icons/TrophyIcon.vue";
 import { ref } from "vue";
-import { DifficultyName } from "../types/types";
+import { DifficultyName, LeaderboardType, TopUserType } from "../types/types";
 
 const { score, difficulty } = defineProps<{
   score: number;
@@ -79,20 +79,59 @@ function validateUsername(): void {
 }
 
 /**
+ * Adds a user's score to the leaderboard stored in localStorage.
+ * Updates the leaderboard for a specific difficulty level, only the top 3 scores are stored.
+ *
+ * @param {TopUserType} data - The new user's data.
+ * @param {DifficultyName} difficulty - The difficulty level to update.
+ */
+function addToStorage(data: TopUserType, difficulty: DifficultyName): void {
+  const prevLeaderboard = localStorage.getItem("leaderboard");
+  const parsedLeaderboard: LeaderboardType[] = prevLeaderboard
+    ? JSON.parse(prevLeaderboard)
+    : [];
+
+  const subList = parsedLeaderboard.find((el) => el.key === difficulty);
+
+  if (subList) {
+    subList.list.push(data);
+    subList.list.sort((a, b) => b.score - a.score);
+    subList.list = subList.list.slice(0, 3);
+
+    localStorage.setItem("leaderboard", JSON.stringify(parsedLeaderboard));
+  } else {
+    const newSection: LeaderboardType = {
+      key: difficulty,
+      list: [data],
+    };
+    console.log(newSection);
+    parsedLeaderboard.push(newSection);
+
+    localStorage.setItem("leaderboard", JSON.stringify(parsedLeaderboard));
+  }
+}
+
+/**
  * Sends a server request to the BE to store the game information
  */
 async function submitScore(): Promise<void> {
+  if (!difficulty) {
+    return;
+  }
+
   if (!username.value) {
     showUserError.value = true;
     return;
   }
 
   try {
-    const data = {
+    const data: TopUserType = {
       name: username.value,
       score,
       difficulty,
     };
+
+    addToStorage(data, difficulty);
 
     const response = await fetch("http://localhost:3000/api/add-user", {
       method: "Post",

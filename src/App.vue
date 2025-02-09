@@ -116,7 +116,7 @@ const remainingHints = ref<number>(DEFAULT_HINTS);
 const sudokuBoardInstance = new Sudoku();
 const initialBoard = ref<Cell[][]>(sudokuBoardInstance.getInitialBoard());
 const board = ref<Cell[][]>(sudokuBoardInstance.getInitialBoard());
-const selectedLevel = ref<DifficultyName | null>(null);
+const selectedLevel = ref<DifficultyName | null>("Beginner");
 
 const errorPositions = ref<Map<string, CellPosition>>(new Map());
 
@@ -126,7 +126,7 @@ const undoRedoLinkedList = ref<GameHistory>(new GameHistory());
 
 const isDraft = ref<boolean>(false);
 
-const showEndGameModal = ref<boolean>(false);
+const showEndGameModal = ref<boolean>(true);
 
 const completedArea = ref<CompletedAreaType>({
   column: -1,
@@ -192,7 +192,7 @@ function pauseGame(): void {
 
 /**
  * Handles visibility changes of the document.
- * - Pauses the game if the document becomes hidden (e.g., switching tabs).
+ * - Pauses the game if the document becomes hidden.
  */
 function handleVisibilityChange(): void {
   if (document.hidden && !showSelectLevelModal.value) {
@@ -201,7 +201,8 @@ function handleVisibilityChange(): void {
 }
 
 /**
- * Gets the leaderboard data from the backend
+ * Gets the leaderboard data from the backend.
+ * If there is an error retrieving data from the server, it will try to get last data stored in localstorage.
  */
 async function getLeaderboard(): Promise<void> {
   try {
@@ -217,6 +218,9 @@ async function getLeaderboard(): Promise<void> {
     leaderboard.value = data;
   } catch (e) {
     console.error("Error fetching leaderboard data:", e);
+
+    const storedLeaderboard = localStorage.getItem("leaderboard");
+    leaderboard.value = storedLeaderboard ? JSON.parse(storedLeaderboard) : [];
   }
 }
 
@@ -468,7 +472,7 @@ function undoAction() {
   //we clear the board, in case it's a draft we will clear the draft value too, we always clear the actual value since you cannot add a draft value over it.
   updateBoard(prevValue, row, column, prevDraft, draft);
 
-  // we clear the error if we had any on that position
+  // we clear the error if we had any on that position.
   clearError(row, column);
 
   if (prevValue !== 0) {
@@ -499,7 +503,7 @@ function redoAction(): void {
 
   clearError(row, column);
 
-  //if the redo value was an error we should display it
+  // Display error from the redo value if any.
   addError(value, row, column);
 }
 
