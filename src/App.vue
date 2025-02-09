@@ -13,6 +13,10 @@
         :board="board"
         :initial-board="initialBoard"
         :error-positions="errorPositions"
+        :completed-area="completedArea"
+        :prev-completed-areas="prevCompletedAreas"
+        @update-completed-area="updateCompletedArea"
+        @update-prev-completed-areas="updatePrevCompletedAreas"
         @update-board="updateSudokuBoard"
       ></SudokuBoard>
       <div class="flex flex-col gap-2 sm:gap-4">
@@ -61,7 +65,14 @@ import AvailableDigits from "./components/AvailableDigits.vue";
 import SudokuBoard from "./components/SudokuBoard.vue";
 import Topbar from "./components/Topbar.vue";
 import StartGameModal from "./components/StartGameModal.vue";
-import { Cell, DifficultyName, CellPosition } from "./types/types";
+import {
+  Cell,
+  DifficultyName,
+  CellPosition,
+  CompletedAreaType,
+  PrevCompletedAreasType,
+  AreaType,
+} from "./types/types";
 import PauseGameModal from "./components/PauseGameModal.vue";
 import Leaderboard from "./components/Leaderboard.vue";
 import { Sudoku } from "./utility/sudokuGenerator";
@@ -75,7 +86,7 @@ const MAX_TIME_POINTS: number = 500;
 
 const timer = ref<number>(0);
 const showGamePausedModal = ref<boolean>(false);
-const showSelectLevelModal = ref<boolean>(false);
+const showSelectLevelModal = ref<boolean>(true);
 const intervalReference = ref<ReturnType<typeof setInterval>>();
 
 const DEFAULT_HINTS: number = 10;
@@ -94,7 +105,45 @@ const undoRedoLinkedList = ref<GameHistory>(new GameHistory());
 
 const isDraft = ref<boolean>(false);
 
-const showEndGameModal = ref<boolean>(true);
+const showEndGameModal = ref<boolean>(false);
+
+const INITIAL_COMPLETED_AREA: CompletedAreaType = {
+  column: -1,
+  line: -1,
+  square: -1,
+};
+const completedArea = ref<CompletedAreaType>(INITIAL_COMPLETED_AREA);
+
+const INITIAL_PREV_COMPLETED_AREA: PrevCompletedAreasType = {
+  column: [],
+  line: [],
+  square: [],
+};
+const prevCompletedAreas = ref<PrevCompletedAreasType>(
+  INITIAL_PREV_COMPLETED_AREA
+);
+
+/**
+ * Updates the completed area by setting its value.
+ *
+ * @param {AreaType} area - The area type to update.
+ * @param {number} value - The value to set for the specified area.
+ * @returns {void}
+ */
+function updateCompletedArea(area: AreaType, value: number): void {
+  completedArea.value[area] = value;
+}
+
+/**
+ * Updates the previous completed areas by appending a value to the specified area.
+ *
+ * @param {AreaType} area - The area type to update.
+ * @param {number} value - The value to append to the specified area's array.
+ * @returns {void}
+ */
+function updatePrevCompletedAreas(area: AreaType, value: number): void {
+  prevCompletedAreas.value[area].push(value);
+}
 
 /**
  * Starts the game timer.
@@ -150,6 +199,9 @@ function resumeGame(): void {
   start();
 }
 
+/**
+ * Starts a new Sudoku game by resetting relevant game states.
+ */
 function startNewGame(): void {
   showSelectLevelModal.value = true;
   showEndGameModal.value = false;
@@ -158,10 +210,19 @@ function startNewGame(): void {
   showGamePausedModal.value = false;
   timer.value = 0;
   remainingHints.value = DEFAULT_HINTS;
+  prevCompletedAreas.value = INITIAL_PREV_COMPLETED_AREA;
+  completedArea.value = INITIAL_COMPLETED_AREA;
+  isDraft.value = false;
+  score.value = 0;
+  errorPositions.value.clear();
 }
 
+/**
+ * Uses a hint to reveal a correct number in the Sudoku board.
+ * Reduces the number of available hints and updates the score.
+ */
 function takeHint(): void {
-  if (remainingHints.value <= 0 || !board.value) {
+  if (remainingHints.value <= 0) {
     return;
   }
 
@@ -217,6 +278,11 @@ function correctNextCell(
   return false;
 }
 
+/**
+ * Selects the difficulty level for the game, generates a new Sudoku board,
+ * resets the timer, and starts a new game.
+ * @param {DifficultyName} level - The selected difficulty level for the Sudoku game.
+ */
 function selectLevel(level: DifficultyName): void {
   selectedLevel.value = level;
 
@@ -232,6 +298,12 @@ function selectLevel(level: DifficultyName): void {
   showSelectLevelModal.value = false;
 }
 
+/**
+ * Adds an error to the errorPositions map if the value is incorrect.
+ * @param {number} value - The value entered in the cell.
+ * @param {number} row - The row index of the cell.
+ * @param {number} column - The column index of the cell.
+ */
 function addError(value: number, row: number, column: number): void {
   if (value === 0) {
     return;
@@ -243,6 +315,11 @@ function addError(value: number, row: number, column: number): void {
   }
 }
 
+/**
+ * Clears an error from the errorPositions map for the specified cell.
+ * @param {number} row - The row index of the cell.
+ * @param {number} column - The column index of the cell.
+ */
 function clearError(row: number, column: number): void {
   const key = `${row}${column}`;
   if (errorPositions.value.has(key)) {
@@ -250,6 +327,13 @@ function clearError(row: number, column: number): void {
   }
 }
 
+/**
+ * Updates the Sudoku board with a new value, and manages draft and undo/redo operations.
+ * Also updates the score based on whether the entered value is correct or not.
+ * @param {number} row - The row index of the cell.
+ * @param {number} column - The column index of the cell.
+ * @param {number} value - The value to be inserted into the cell.
+ */
 function updateSudokuBoard(row: number, column: number, value: number): void {
   // no need to add draft value if the board already has a value
   if (board.value[row][column].value !== 0 && isDraft.value) {
@@ -291,6 +375,14 @@ function updateSudokuBoard(row: number, column: number, value: number): void {
   score.value--;
 }
 
+/**
+ * Updates the value of a cell on the board.
+ * @param {number} value - The new value to be set in the cell.
+ * @param {number} row - The row index of the cell.
+ * @param {number} column - The column index of the cell.
+ * @param {number} draftValue - The value to be set if in draft mode.
+ * @param {boolean} draft - Indicates if the value is a draft.
+ */
 function updateBoard(
   value: number,
   row: number,
@@ -305,6 +397,10 @@ function updateBoard(
   }
 }
 
+/**
+ * Undoes the last action by reverting the board to its previous state.
+ * If there is no action to undo, the function does nothing.
+ */
 function undoAction() {
   if (!undoRedoLinkedList.value.canUndo()) {
     return;
@@ -323,6 +419,10 @@ function undoAction() {
   clearError(row, column);
 }
 
+/**
+ * Redoes the last undone action by restoring the board to its next state.
+ * If there is no action to redo, the function does nothing.
+ */
 function redoAction(): void {
   if (!undoRedoLinkedList.value.canRedo()) {
     return;
@@ -344,10 +444,16 @@ function redoAction(): void {
   addError(value, row, column);
 }
 
+/**
+ * Toggles between draft and regular modes for editing the board.
+ */
 function toggleDraftMode(): void {
   isDraft.value = !isDraft.value;
 }
 
+/**
+ * Ends the current game and displays the end game modal with the final score.
+ */
 function endGame(): void {
   showEndGameModal.value = true;
 

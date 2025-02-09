@@ -8,7 +8,7 @@
         <BaseButton
           v-for="level in difficultyLevels"
           :key="level.name"
-          @click="selectLevel(level.name)"
+          @click="$emit('select', level.name)"
           variant="secondary"
           class="group hover:scale-[1.02] transition-transform"
         >
@@ -87,8 +87,4 @@ const difficultyLevels: DifficultyLevel[] = [
     arrowClass: "text-purple-600",
   },
 ] as const;
-
-function selectLevel(level: DifficultyName) {
-  emit("select", level);
-}
 </script>

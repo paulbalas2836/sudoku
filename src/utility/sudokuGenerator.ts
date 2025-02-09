@@ -2,19 +2,32 @@ import { DifficultyName, Cell } from "../types/types";
 import { createBoard, deepCopy, generateRandomNumber } from "./utility";
 
 export class Sudoku {
-  private board: Cell[][];
-  private initialBoard: Cell[][];
+  #board: Cell[][];
+  #initialBoard: Cell[][];
 
   constructor() {
-    this.initialBoard = createBoard();
-    this.board = createBoard();
+    this.#initialBoard = createBoard();
+    this.#board = createBoard();
   }
 
-  private shuffle(array: number[]): number[] {
+  /**
+   * Shuffles an array of numbers randomly to generate a Sudoku board.
+   * @param {number[]} array - The list of numbers to shuffle.
+   * @returns {number[]} - A new shuffled array.
+   */
+  shuffle(array: number[]): number[] {
     return array.sort(() => Math.random() - 0.5);
   }
 
-  private isValid(
+  /**
+   * Checks if a given number can be placed in the specified cell without violating Sudoku rules.
+   * @param {Cell[][]} board - The current Sudoku board.
+   * @param {number} row - The row index.
+   * @param {number} column - The column index.
+   * @param {number} value - The value to be placed.
+   * @returns {boolean} - Returns true if the placement is valid, otherwise false.
+   */
+  isValid(
     board: Cell[][],
     row: number,
     column: number,
@@ -40,11 +53,14 @@ export class Sudoku {
     return true;
   }
 
-  private fillSudoku(
-    board: Cell[][],
-    row: number = 0,
-    column: number = 0
-  ): boolean {
+  /**
+   * Recursively fills the Sudoku board with valid numbers.
+   * @param {Cell[][]} board - The Sudoku board to fill.
+   * @param {number} [row=0] - The starting row index.
+   * @param {number} [column=0] - The starting column index.
+   * @returns {boolean} - Returns true if the board is successfully filled.
+   */
+  fillSudoku(board: Cell[][], row: number = 0, column: number = 0): boolean {
     if (row === 9) return true;
 
     if (board[row][column].value !== 0)
@@ -69,7 +85,12 @@ export class Sudoku {
     return false;
   }
 
-  private getHiddenNumbersCount(level: DifficultyName): number {
+  /**
+   * Determines the number of cells to hide based on the difficulty level.
+   * @param {DifficultyName} level - The difficulty level of the Sudoku game.
+   * @returns {number} - The number of cells to hide.
+   */
+  getHiddenNumbersCount(level: DifficultyName): number {
     switch (level) {
       case "Beginner":
         return 81 - generateRandomNumber(36, 40);
@@ -84,11 +105,14 @@ export class Sudoku {
     }
   }
 
-  private countSolutions(
-    board: Cell[][],
-    row: number = 0,
-    column: number = 0
-  ): number {
+  /**
+   * Counts the number of valid Sudoku solutions for a given board state.
+   * @param {Cell[][]} board - The Sudoku board.
+   * @param {number} [row=0] - The starting row index.
+   * @param {number} [column=0] - The starting column index.
+   * @returns {number} - The number of valid solutions.
+   */
+  countSolutions(board: Cell[][], row: number = 0, column: number = 0): number {
     if (row === 9) return 1;
 
     if (board[row][column].value !== 0) {
@@ -115,43 +139,62 @@ export class Sudoku {
     return count;
   }
 
-  private removeNumbers(board: Cell[][], difficulty: number): void {
-    this.board = deepCopy(board);
+  /**
+   * Removes numbers from a fully filled Sudoku board to create a playable puzzle.
+   * @param {Cell[][]} board - The completed Sudoku board.
+   * @param {number} difficulty - The number of cells to remove based on difficulty.
+   */
+  removeNumbers(initialBoard: Cell[][], difficulty: number): Cell[][] {
+    const board = deepCopy(initialBoard);
     let attempts = difficulty;
 
     while (attempts > 0) {
       const row = Math.floor(Math.random() * 9);
       const col = Math.floor(Math.random() * 9);
 
-      if (this.board[row][col].value === 0) continue;
+      if (board[row][col].value === 0) continue;
 
-      const temp = this.board[row][col].value;
-      this.board[row][col].value = 0;
+      const temp = board[row][col].value;
+      board[row][col].value = 0;
 
-      const boardCopy = deepCopy(this.board);
+      const boardCopy = deepCopy(board);
       if (this.countSolutions(boardCopy) !== 1) {
-        this.board[row][col].value = temp;
+        board[row][col].value = temp;
 
-        this.board[row][col].initial = true;
+        board[row][col].initial = true;
       } else {
         attempts--;
-        this.board[row][col].initial = false;
+        board[row][col].initial = false;
       }
     }
+
+    return board;
   }
 
+  /**
+   * Generates a new Sudoku board based on the given difficulty level.
+   * @param {DifficultyName} level - The difficulty level.
+   */
   generateSudokuBoard(level: DifficultyName) {
-    this.initialBoard = createBoard();
-    this.fillSudoku(this.initialBoard);
+    this.#initialBoard = createBoard();
+    this.fillSudoku(this.#initialBoard);
     const hiddenNumbersCount = this.getHiddenNumbersCount(level);
-    this.removeNumbers(this.initialBoard, hiddenNumbersCount);
+    this.#board = this.removeNumbers(this.#initialBoard, hiddenNumbersCount);
   }
 
+  /**
+   * Retrieves the initial Sudoku board.
+   * @returns {Cell[][]} - The initial Sudoku board before any modifications.
+   */
   getInitialBoard() {
-    return this.initialBoard;
+    return this.#initialBoard;
   }
 
+  /**
+   * Retrieves the current state of the Sudoku board.
+   * @returns {Cell[][]} - The current Sudoku board.
+   */
   getBoard() {
-    return this.board;
+    return this.#board;
   }
 }

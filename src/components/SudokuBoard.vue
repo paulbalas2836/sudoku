@@ -3,7 +3,8 @@
     <div v-for="(row, indexRow) in board" :key="indexRow">
       <div
         v-for="(cell, indexColumn) in row"
-        :key="indexColumn"
+        ref="cells"
+        :key="`${indexColumn}-${indexRow}`"
         class="border-r border-b border-gray-200 hover:bg-gray-200 transition-all ease-in-out duration-200 w-6 sm:w-10 md:w-14 aspect-square flex items-center justify-center focus:bg-indigo-200"
         :class="[
           getBorderStyle(indexRow + 1, indexColumn + 1),
@@ -11,7 +12,6 @@
         ]"
         @keypress="(e) => fillCell(e, indexRow, indexColumn, cell)"
         :tabindex="cell.initial || cell.hint ? -1 : 0"
-        ref="cells"
       >
         <span
           v-if="cell.value !== 0 || cell.draftValue !== 0"
@@ -26,20 +26,43 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
-import { AnimatedAreasType, Cell, CellPosition } from "../types/types";
+import { ref, watch } from "vue";
+import {
+  AreaType,
+  Cell,
+  CellPosition,
+  CompletedAreaType,
+  PrevCompletedAreasType,
+} from "../types/types";
 import gsap from "gsap";
 
-const { board, errorPositions, initialBoard } = defineProps<{
+const {
+  board,
+  errorPositions,
+  initialBoard,
+  completedArea,
+  prevCompletedAreas,
+} = defineProps<{
   board: Cell[][];
   initialBoard: Cell[][];
   errorPositions: Map<string, CellPosition>;
+  completedArea: CompletedAreaType;
+  prevCompletedAreas: PrevCompletedAreasType;
 }>();
 const emit = defineEmits<{
   (event: "update-board", row: number, column: number, value: number): void;
+  (event: "update-completed-area", area: AreaType, value: number): void;
+  (event: "update-prev-completed-areas", area: AreaType, value: number): void;
 }>();
 
-function getBackgroundColor(row: number, column: number, cell: Cell) {
+/**
+ * Determines the background color of a Sudoku cell based on its state.
+ * @param {number} row - The row index of the cell.
+ * @param {number} column - The column index of the cell.
+ * @param {Cell} cell - The cell object containing its properties.
+ * @returns {string} - A Tailwind CSS class representing the background color.
+ */
+function getBackgroundColor(row: number, column: number, cell: Cell): string {
   if (cell.hint) {
     return "bg-blue-200";
   }
@@ -51,9 +74,17 @@ function getBackgroundColor(row: number, column: number, cell: Cell) {
   if (errorPositions.has(`${row}${column}`)) {
     return "bg-red-200";
   }
+
+  return "";
 }
 
-function getBorderStyle(row: number, column: number) {
+/**
+ * Determines the border style for a Sudoku cell based on its position.
+ * @param {number} row - The row index of the cell.
+ * @param {number} column - The column index of the cell.
+ * @returns {string} - A Tailwind CSS class representing the border style.
+ */
+function getBorderStyle(row: number, column: number): string {
   let dynamicClass = "";
   if (column === 1) {
     dynamicClass = `${dynamicClass} border-t-2 border-t-black`;
@@ -82,91 +113,160 @@ function getBorderStyle(row: number, column: number) {
   return dynamicClass;
 }
 
-const animatedAreas = computed(() => {
-  const matches: AnimatedAreasType[] = [];
+const cells = ref<HTMLDivElement[]>([]);
 
-  for (let i = 0; i < board.length; ++i) {
-    // Check line match
-    const isLineMatching = board[i].every(
-      (cell, j) => cell.value === initialBoard[i][j].value
-    );
+watch(
+  () => board,
+  () => {
+    //grid layout will inverse how we see the board
+    for (let i = 0; i < board.length; ++i) {
+      if (
+        !prevCompletedAreas.column.length ||
+        !prevCompletedAreas.column.includes(i)
+      ) {
+        const columnList = board[i]
+          .map((cell, j) =>
+            cell.value === initialBoard[i][j].value ? i * 9 + j : null
+          )
+          .filter((value) => value !== null) as number[];
 
-    // Check column match
-    const isColumnMatching = board.every(
-      (row, j) => row[i].value === initialBoard[j][i].value
-    );
+        if (columnList.length === 9) {
+          emit("update-completed-area", "column", i);
+        }
+      }
 
-    if (isLineMatching) {
-      matches.push({ key: "line", index: i });
-    }
+      if (
+        !prevCompletedAreas.line.length ||
+        !prevCompletedAreas.line.includes(i)
+      ) {
+        const lineList = board
+          .map((row, j) =>
+            row[i].value === initialBoard[j][i].value ? j * 9 + i : null
+          )
+          .filter((value) => value !== null) as number[];
 
-    if (isColumnMatching) {
-      matches.push({ key: "column", index: i });
-    }
-  }
+        if (lineList.length === 9) {
+          emit("update-completed-area", "line", i);
+        }
+      }
 
-  // Check 3x3 squares
-  for (let square = 0; square < 9; square++) {
-    const startRow = Math.floor(square / 3) * 3;
-    const startCol = (square % 3) * 3;
-    let isSquareMatching = true;
+      if (
+        !prevCompletedAreas.square.length ||
+        !prevCompletedAreas.square.includes(i)
+      ) {
+        const startRow = Math.floor(i / 3) * 3;
+        const startCol = (i % 3) * 3;
+        let isSquareMatching = true;
 
-    // Compare each cell in the 3x3 square
-    for (let i = 0; i < 3 && isSquareMatching; i++) {
-      for (let j = 0; j < 3 && isSquareMatching; j++) {
-        const row = startRow + i;
-        const col = startCol + j;
-        if (board[row][col].value !== initialBoard[row][col].value) {
-          isSquareMatching = false;
+        // Compare each cell in the 3x3 square
+        for (let j = 0; j < 3 && isSquareMatching; ++j) {
+          for (let k = 0; k < 3 && isSquareMatching; ++k) {
+            const row = startRow + j;
+            const col = startCol + k;
+            if (board[row][col].value !== initialBoard[row][col].value) {
+              isSquareMatching = false;
+            }
+          }
+        }
+
+        if (isSquareMatching) {
+          emit("update-completed-area", "square", i);
         }
       }
     }
+  },
+  { deep: true }
+);
 
-    if (isSquareMatching) {
-      matches.push({ key: "square", index: square });
+/**
+ * Animates the sudoku board in sequence upon line, column or scoare completion.
+ *
+ * @param {HTMLDivElement[]} list - The list of div elements to animate.
+ * @param {AreaType} area - The area type associated with the animation.
+ * @param {number} value - The value to emit with the event.
+ * @fires update-prev-completed-areas - Emits the updated area and value.
+ */
+function animate(list: HTMLDivElement[], area: AreaType, value: number) {
+  const timeline = gsap.timeline({ paused: true });
+
+  list.forEach((cell) => {
+    timeline.to(cell, {
+      duration: 0.3,
+      onStart: () => cell.classList.add("!bg-blue-500", "text-white"),
+    });
+  });
+
+  timeline.to(list, {
+    onStart: () => {
+      list.forEach((cell) => {
+        cell.classList.remove("!bg-blue-500", "text-white");
+      });
+    },
+    duration: 0.5,
+  });
+
+  timeline.play();
+
+  emit("update-prev-completed-areas", area, value);
+}
+
+watch(
+  () => completedArea.line,
+  (newValue) => {
+    const filteredCells: HTMLDivElement[] = [];
+    for (let i = newValue; i < cells.value.length; i += 9) {
+      filteredCells.push(cells.value[i]);
     }
+
+    animate(filteredCells, "line", newValue);
   }
+);
 
-  return matches;
-});
+watch(
+  () => completedArea.column,
+  (newValue) => {
+    const filteredCells: HTMLDivElement[] = [];
 
-// watch(
-//   () => animatedAreas,
-//   (newValue) => {
-//     cells.value.forEach((cell, index) => {
-//       timeline.to(cell, {
-//         backgroundColor: "#3B82F6", // Tailwind blue-500
-//         color: "white",
-//         duration: 0.3,
-//       });
-//     });
-//   },
-//   { deep: true }
-// );
+    for (let i = newValue * 9; i < newValue * 9 + 9; ++i) {
+      filteredCells.push(cells.value[i]);
+    }
+    animate(filteredCells, "column", newValue);
+  }
+);
 
-const cells = ref([]);
-// onMounted(() => {
-//   console.log(cells.value);
+watch(
+  () => completedArea.square,
+  (newValue) => {
+    const filteredCells: HTMLDivElement[] = [];
 
-//   // Add each cell to the timeline
-//   cells.value.forEach((cell, index) => {
-//     timeline.to(cell, {
-//       backgroundColor: "#3B82F6", // Tailwind blue-500
-//       color: "white",
-//       duration: 0.3,
-//     });
-//   });
+    // Calculate the starting position of the 3x3 square
+    const squareRow = Math.floor(newValue / 3);
+    const squareCol = newValue % 3;
+    const startingPoint = squareRow * 27 + squareCol * 3;
 
-//   // Fade out all cells
-//   timeline.to(cells.value, {
-//     backgroundColor: "transparent",
-//     color: "black",
-//     duration: 0.5,
-//   });
-// });
+    // Iterate over the 3x3 square
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const cellIndex = startingPoint + row * 9 + col;
+        if (cellIndex < cells.value.length) {
+          filteredCells.push(cells.value[cellIndex]);
+        }
+      }
+    }
+    animate(filteredCells, "square", newValue);
+  }
+);
 
+/**
+ * Handles user input to fill a Sudoku cell with a number.
+ * @param {KeyboardEvent} e - The keyboard event triggered by the user.
+ * @param {number} row - The row index of the cell.
+ * @param {number} column - The column index of the cell.
+ * @param {Cell} cell - The cell object containing its properties.
+ * @fires update-board - Emits an event to update the board with the entered number.
+ */
 function fillCell(e: KeyboardEvent, row: number, column: number, cell: Cell) {
-  if (cell.initial) {
+  if (cell.initial || cell.hint) {
     return;
   }
 

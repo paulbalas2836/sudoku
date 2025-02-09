@@ -23,6 +23,10 @@ export function createBoard(): Cell[][] {
   );
 }
 
-export function generateRandomNumber(max: number, min: number): number {
+export function generateRandomNumber(min: number, max: number): number {
+  if (max < min) {
+    return -1;
+  }
+
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }

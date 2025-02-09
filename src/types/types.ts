@@ -34,3 +34,8 @@ export type AnimatedAreasType = {
   key: string;
   index: number;
 };
+
+export type AreaType = "column" | "square" | "line";
+
+export type PrevCompletedAreasType = Record<AreaType, number[]>;
+export type CompletedAreaType = Record<AreaType, number>;

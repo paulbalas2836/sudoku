@@ -47,7 +47,7 @@ defineEmits<{
   (event: "take-hint"): void;
 }>();
 
-const formatTimer = computed(() => {
+const formatTimer = computed<string>(() => {
   const minutes = Math.floor(timer / 60);
   const seconds = timer % 60;
 
