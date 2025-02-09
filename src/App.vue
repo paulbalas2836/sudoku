@@ -1,5 +1,10 @@
 <template>
-  <div class="justify-center flex flex-col gap-8">
+  <div class="justify-center flex flex-col gap-4 md:gap-8">
+    <div v-if="showEndGameModal" class="absolute top-0 left-1/2">
+      <div
+        v-confetti="{ particleCount: 200, force: 0.3, duration: 5000 }"
+      ></div>
+    </div>
     <Topbar
       :remaining-hints="remainingHints"
       :score="score"
@@ -8,6 +13,25 @@
       @take-hint="takeHint"
       @pause-game="pauseGame"
     ></Topbar>
+
+    <div class="flex gap-4">
+      <BaseButton
+        @click="undoAction"
+        variant="primary"
+        :disabled="!undoRedoLinkedList.canUndo()"
+      >
+        <span>Undo</span></BaseButton
+      >
+      <BaseButton
+        @click="redoAction"
+        variant="primary"
+        :disabled="!undoRedoLinkedList.canRedo()"
+        ><span>Redo</span></BaseButton
+      >
+      <BaseButton @click="toggleDraftMode" variant="primary">
+        <span>Draft: {{ isDraft ? "On" : "Off" }}</span></BaseButton
+      >
+    </div>
     <div class="flex gap-2 sm:gap-8 sm:flex-row flex-col">
       <SudokuBoard
         :board="board"
@@ -20,17 +44,8 @@
         @update-board="updateSudokuBoard"
       ></SudokuBoard>
       <div class="flex flex-col gap-2 sm:gap-4">
-        <BaseButton @click="undoAction" variant="primary">
-          <span>Undo</span></BaseButton
-        >
-        <BaseButton @click="redoAction" variant="primary"
-          ><span>Redo</span></BaseButton
-        >
-        <BaseButton @click="toggleDraftMode" variant="primary">
-          <span>Draft: {{ isDraft ? "On" : "Off" }}</span></BaseButton
-        >
         <div class="hidden sm:block">
-          <Leaderboard></Leaderboard>
+          <Leaderboard :leaderboard="leaderboard"></Leaderboard>
         </div>
       </div>
     </div>
@@ -40,7 +55,7 @@
       @end-game="endGame"
     ></AvailableDigits>
     <div class="sm:hidden block">
-      <Leaderboard></Leaderboard>
+      <Leaderboard :leaderboard="leaderboard"></Leaderboard>
     </div>
   </div>
   <div v-if="showSelectLevelModal">
@@ -55,7 +70,11 @@
   </div>
 
   <div v-if="showEndGameModal">
-    <EndGamePopup :score="score" @start-new="startNewGame"></EndGamePopup>
+    <EndGamePopup
+      :score="score"
+      :difficulty="selectedLevel"
+      @start-new="startNewGame"
+    ></EndGamePopup>
   </div>
 </template>
 
@@ -65,6 +84,7 @@ import AvailableDigits from "./components/AvailableDigits.vue";
 import SudokuBoard from "./components/SudokuBoard.vue";
 import Topbar from "./components/Topbar.vue";
 import StartGameModal from "./components/StartGameModal.vue";
+import { vConfetti } from "@neoconfetti/vue";
 import {
   Cell,
   DifficultyName,
@@ -72,6 +92,7 @@ import {
   CompletedAreaType,
   PrevCompletedAreasType,
   AreaType,
+  LeaderboardType,
 } from "./types/types";
 import PauseGameModal from "./components/PauseGameModal.vue";
 import Leaderboard from "./components/Leaderboard.vue";
@@ -107,21 +128,19 @@ const isDraft = ref<boolean>(false);
 
 const showEndGameModal = ref<boolean>(false);
 
-const INITIAL_COMPLETED_AREA: CompletedAreaType = {
+const completedArea = ref<CompletedAreaType>({
   column: -1,
   line: -1,
   square: -1,
-};
-const completedArea = ref<CompletedAreaType>(INITIAL_COMPLETED_AREA);
+});
 
-const INITIAL_PREV_COMPLETED_AREA: PrevCompletedAreasType = {
+const prevCompletedAreas = ref<PrevCompletedAreasType>({
   column: [],
   line: [],
   square: [],
-};
-const prevCompletedAreas = ref<PrevCompletedAreasType>(
-  INITIAL_PREV_COMPLETED_AREA
-);
+});
+
+const leaderboard = ref<LeaderboardType[]>([]);
 
 /**
  * Updates the completed area by setting its value.
@@ -181,7 +200,29 @@ function handleVisibilityChange(): void {
   }
 }
 
+/**
+ * Gets the leaderboard data from the backend
+ */
+async function getLeaderboard(): Promise<void> {
+  try {
+    const response = await fetch("http://localhost:3000/api/top3", {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    leaderboard.value = data;
+  } catch (e) {
+    console.error("Error fetching leaderboard data:", e);
+  }
+}
+
 onMounted(() => {
+  getLeaderboard();
+
   document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 
@@ -210,11 +251,22 @@ function startNewGame(): void {
   showGamePausedModal.value = false;
   timer.value = 0;
   remainingHints.value = DEFAULT_HINTS;
-  prevCompletedAreas.value = INITIAL_PREV_COMPLETED_AREA;
-  completedArea.value = INITIAL_COMPLETED_AREA;
+  prevCompletedAreas.value = {
+    column: [],
+    line: [],
+    square: [],
+  };
+  completedArea.value = {
+    column: -1,
+    line: -1,
+    square: -1,
+  };
   isDraft.value = false;
   score.value = 0;
   errorPositions.value.clear();
+  undoRedoLinkedList.value = new GameHistory();
+
+  getLeaderboard();
 }
 
 /**
@@ -229,8 +281,8 @@ function takeHint(): void {
   remainingHints.value--;
 
   //take a random cell position and we search for the next/previous open or wrong cell and correct it
-  const randomRow = generateRandomNumber(8, 0);
-  const randomCol = generateRandomNumber(8, 0);
+  const randomRow = generateRandomNumber(0, 8);
+  const randomCol = generateRandomNumber(0, 8);
 
   // Try correcting the next available cell (forward search)
   if (!correctNextCell(randomRow, randomCol, true)) {
@@ -239,7 +291,7 @@ function takeHint(): void {
   }
 
   // update score
-  score.value -= DEFAULT_HINTS - remainingHints.value;
+  score.value -= DEFAULT_HINTS - remainingHints.value + 2;
 }
 
 /**
@@ -262,7 +314,6 @@ function correctNextCell(
     for (let j = startCol; j >= 0 && j < 9; j += colStep) {
       const key = `${i}${j}`;
       const hasError = errorPositions.value.has(key);
-
       if (board.value[i][j].value === 0 || hasError) {
         board.value[i][j].value = initialBoard.value[i][j].value;
         board.value[i][j].hint = true;
@@ -343,16 +394,18 @@ function updateSudokuBoard(row: number, column: number, value: number): void {
   const draftValue = isDraft.value ? value : 0;
   const actualValue = isDraft.value ? 0 : value;
 
-  updateBoard(actualValue, row, column, draftValue, isDraft.value);
-
   //we add the cell to the undo linked list
   undoRedoLinkedList.value.addNode(
     actualValue,
     row,
     column,
     draftValue,
-    isDraft.value
+    isDraft.value,
+    board.value[row][column].value,
+    board.value[row][column].draftValue
   );
+
+  updateBoard(actualValue, row, column, draftValue, isDraft.value);
 
   // we don't want to change the score or add errors if it's in draft mode
   if (isDraft.value) {
@@ -406,17 +459,21 @@ function undoAction() {
     return;
   }
 
-  const prevValue = undoRedoLinkedList.value.undo();
-  if (!prevValue) {
+  const prevNode = undoRedoLinkedList.value.undo();
+  if (!prevNode) {
     return;
   }
 
-  const { row, column, draftValue, draft } = prevValue;
+  const { row, column, draft, prevValue, prevDraft } = prevNode;
   //we clear the board, in case it's a draft we will clear the draft value too, we always clear the actual value since you cannot add a draft value over it.
-  updateBoard(0, row, column, draft ? 0 : draftValue, draft);
+  updateBoard(prevValue, row, column, prevDraft, draft);
 
   // we clear the error if we had any on that position
   clearError(row, column);
+
+  if (prevValue !== 0) {
+    addError(prevValue, row, column);
+  }
 }
 
 /**
@@ -440,6 +497,8 @@ function redoAction(): void {
   const newDraftValue = draft ? draftValue : 0;
   updateBoard(actualValue, row, column, newDraftValue, draft);
 
+  clearError(row, column);
+
   //if the redo value was an error we should display it
   addError(value, row, column);
 }
@@ -458,5 +517,8 @@ function endGame(): void {
   showEndGameModal.value = true;
 
   score.value += MAX_TIME_POINTS - timer.value;
+
+  //stop the timer
+  clearInterval(intervalReference.value);
 }
 </script>

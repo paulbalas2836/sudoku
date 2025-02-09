@@ -12,6 +12,8 @@ export class ListNode {
       row: -1,
       draftValue: 0,
       draft: false,
+      prevValue: 0,
+      prevDraft: 0,
     },
     next?: ListNode,
     prev?: ListNode
@@ -44,7 +46,9 @@ export class GameHistory {
     row: number,
     column: number,
     draftValue: number,
-    draft: boolean
+    draft: boolean,
+    prevValue: number,
+    prevDraft: number
   ): void {
     this.length++;
     this.currentPosition = this.length;
@@ -54,7 +58,15 @@ export class GameHistory {
       this.current.next.prev = undefined;
     }
 
-    const newNode = new ListNode({ value, row, column, draftValue, draft });
+    const newNode = new ListNode({
+      value,
+      row,
+      column,
+      draftValue,
+      draft,
+      prevValue,
+      prevDraft,
+    });
     this.current.next = newNode;
     newNode.prev = this.current;
 
@@ -114,6 +126,6 @@ export class GameHistory {
    * @returns {boolean} - `true` if a redo action is available, otherwise `false`.
    */
   canRedo(): boolean {
-    return this.currentPosition <= this.length;
+    return this.currentPosition < this.length;
   }
 }

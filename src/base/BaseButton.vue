@@ -2,8 +2,8 @@
   <button
     type="button"
     @click="$emit('click')"
+    :class="[style, { 'opacity-50 !cursor-auto': disabled }]"
     class="responsive-text rounded-lg border sm:px-4 py-2 px-1 text-base font-medium cursor-pointer duration-200 ease-in-out focus-visible:outline-2 focus:outline-offset-2 focus:outline-indigo-400"
-    :class="style"
   >
     <slot />
   </button>
@@ -13,8 +13,9 @@
 import { computed } from "vue";
 import { ButtonVariant } from "../types/types";
 
-const { variant = "primary" } = defineProps<{
+const { variant = "primary", disabled = false } = defineProps<{
   variant?: ButtonVariant;
+  disabled?: boolean;
 }>();
 defineEmits<{ (event: "click"): void }>();
 

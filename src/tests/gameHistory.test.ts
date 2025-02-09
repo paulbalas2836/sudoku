@@ -18,6 +18,8 @@ describe("GameHistory", () => {
         row: -1,
         draftValue: 0,
         draft: false,
+        prevValue: 0,
+        prevDraft: 0,
       });
       expect(node.next).toBeUndefined();
       expect(node.prev).toBeUndefined();
@@ -30,6 +32,8 @@ describe("GameHistory", () => {
         row: 2,
         draftValue: 1,
         draft: true,
+        prevValue: 0,
+        prevDraft: 0,
       };
       const node = new ListNode(customValue);
 
@@ -49,11 +53,13 @@ describe("GameHistory", () => {
         row: -1,
         draftValue: 0,
         draft: false,
+        prevValue: 0,
+        prevDraft: 0,
       });
     });
 
     it("should add a node and update history state", () => {
-      gameHistory.addNode(5, 2, 3, 1, true);
+      gameHistory.addNode(5, 2, 3, 1, true, 0, 0);
 
       expect(gameHistory.length).toBe(1);
       expect(gameHistory.currentPosition).toBe(1);
@@ -63,13 +69,15 @@ describe("GameHistory", () => {
         column: 3,
         draftValue: 1,
         draft: true,
+        prevValue: 0,
+        prevDraft: 0,
       });
     });
 
     it("should add multiple nodes and update the current pointer to the end of the list", () => {
-      gameHistory.addNode(1, 0, 0, 0, false);
-      gameHistory.addNode(2, 1, 1, 1, true);
-      gameHistory.addNode(3, 2, 2, 0, false);
+      gameHistory.addNode(1, 0, 0, 0, false, 0, 0);
+      gameHistory.addNode(2, 1, 1, 1, true, 0, 0);
+      gameHistory.addNode(3, 2, 2, 0, false, 0, 0);
 
       expect(gameHistory.length).toBe(3);
       expect(gameHistory.currentPosition).toBe(3);
@@ -81,6 +89,8 @@ describe("GameHistory", () => {
         column: 1,
         draftValue: 1,
         draft: true,
+        prevValue: 0,
+        prevDraft: 0,
       });
 
       const firstNode = secondNode?.prev;
@@ -90,12 +100,14 @@ describe("GameHistory", () => {
         column: 0,
         draftValue: 0,
         draft: false,
+        prevValue: 0,
+        prevDraft: 0,
       });
     });
 
     it("should undo the last action and return the undone value", () => {
-      gameHistory.addNode(1, 0, 0, 0, false);
-      gameHistory.addNode(2, 1, 1, 1, true);
+      gameHistory.addNode(1, 0, 0, 0, false, 0, 0);
+      gameHistory.addNode(2, 1, 1, 1, true, 0, 0);
 
       const undoValue = gameHistory.undo();
       expect(undoValue).toEqual({
@@ -104,6 +116,8 @@ describe("GameHistory", () => {
         column: 1,
         draftValue: 1,
         draft: true,
+        prevValue: 0,
+        prevDraft: 0,
       });
       expect(gameHistory.currentPosition).toBe(1);
 
@@ -114,6 +128,8 @@ describe("GameHistory", () => {
         column: 0,
         draftValue: 0,
         draft: false,
+        prevValue: 0,
+        prevDraft: 0,
       });
       expect(gameHistory.currentPosition).toBe(0);
 
@@ -122,8 +138,8 @@ describe("GameHistory", () => {
     });
 
     it("should redo the last undone action and return the redone value", () => {
-      gameHistory.addNode(1, 0, 0, 0, false);
-      gameHistory.addNode(2, 1, 1, 1, true);
+      gameHistory.addNode(1, 0, 0, 0, false, 0, 0);
+      gameHistory.addNode(2, 1, 1, 1, true, 0, 0);
       gameHistory.undo();
       gameHistory.undo();
 
@@ -134,6 +150,8 @@ describe("GameHistory", () => {
         column: 0,
         draftValue: 0,
         draft: false,
+        prevValue: 0,
+        prevDraft: 0,
       });
       expect(gameHistory.currentPosition).toBe(1);
 
@@ -144,6 +162,8 @@ describe("GameHistory", () => {
         column: 1,
         draftValue: 1,
         draft: true,
+        prevValue: 0,
+        prevDraft: 0,
       });
       expect(gameHistory.currentPosition).toBe(2);
 
@@ -153,11 +173,11 @@ describe("GameHistory", () => {
 
     it("should correctly indicate if undo or redo is available", () => {
       expect(gameHistory.canUndo()).toBe(false);
-      expect(gameHistory.canRedo()).toBe(true);
+      expect(gameHistory.canRedo()).toBe(false);
 
-      gameHistory.addNode(1, 0, 0, 0, false);
+      gameHistory.addNode(1, 0, 0, 0, false, 1, 0);
       expect(gameHistory.canUndo()).toBe(true);
-      expect(gameHistory.canRedo()).toBe(true);
+      expect(gameHistory.canRedo()).toBe(false);
 
       gameHistory.undo();
       expect(gameHistory.canUndo()).toBe(false);
@@ -165,7 +185,7 @@ describe("GameHistory", () => {
 
       gameHistory.redo();
       expect(gameHistory.canUndo()).toBe(true);
-      expect(gameHistory.canRedo()).toBe(true);
+      expect(gameHistory.canRedo()).toBe(false);
     });
   });
 });

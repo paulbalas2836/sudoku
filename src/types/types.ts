@@ -26,6 +26,8 @@ export type CellPositionWithValue = {
   value: number;
   draftValue: number;
   draft: boolean;
+  prevDraft: number;
+  prevValue: number;
 } & CellPosition;
 
 export type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -39,3 +41,13 @@ export type AreaType = "column" | "square" | "line";
 
 export type PrevCompletedAreasType = Record<AreaType, number[]>;
 export type CompletedAreaType = Record<AreaType, number>;
+
+export type TopUserType = {
+  name: string;
+  score: number;
+  difficulty: DifficultyName;
+};
+export type LeaderboardType = {
+  key: DifficultyName;
+  list: TopUserType[];
+};

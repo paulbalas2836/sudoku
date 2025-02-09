@@ -5,7 +5,7 @@
         v-for="(cell, indexColumn) in row"
         ref="cells"
         :key="`${indexColumn}-${indexRow}`"
-        class="border-r border-b border-gray-200 hover:bg-gray-200 transition-all ease-in-out duration-200 w-6 sm:w-10 md:w-14 aspect-square flex items-center justify-center focus:bg-indigo-200"
+        class="border-r border-b border-gray-200 hover:bg-gray-200 transition-all ease-in-out duration-200 min-w-6 sm:w-10 md:w-14 max-w-14 aspect-square flex items-center justify-center focus:border-2 focus:border-blue-500 focus:bg-blue-200"
         :class="[
           getBorderStyle(indexRow + 1, indexColumn + 1),
           getBackgroundColor(indexRow, indexColumn, cell),
@@ -16,7 +16,7 @@
         <span
           v-if="cell.value !== 0 || cell.draftValue !== 0"
           :class="{ italic: cell.value === 0 && cell.draftValue }"
-          class="text-sm md:text-xl"
+          class="text-sm md:text-xl text-center"
         >
           {{ cell.value !== 0 ? cell.value : cell.draftValue }}
         </span>
@@ -72,7 +72,7 @@ function getBackgroundColor(row: number, column: number, cell: Cell): string {
   }
 
   if (errorPositions.has(`${row}${column}`)) {
-    return "bg-red-200";
+    return "border border-red-500 !bg-red-300";
   }
 
   return "";
@@ -191,15 +191,15 @@ function animate(list: HTMLDivElement[], area: AreaType, value: number) {
 
   list.forEach((cell) => {
     timeline.to(cell, {
-      duration: 0.3,
-      onStart: () => cell.classList.add("!bg-blue-500", "text-white"),
+      duration: 0.2,
+      onStart: () => cell.classList.add("!bg-green-200", "text-green-800"),
     });
   });
 
   timeline.to(list, {
     onStart: () => {
       list.forEach((cell) => {
-        cell.classList.remove("!bg-blue-500", "text-white");
+        cell.classList.remove("!bg-green-200", "text-green-800");
       });
     },
     duration: 0.5,
