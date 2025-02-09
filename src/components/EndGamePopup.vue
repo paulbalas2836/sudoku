@@ -59,7 +59,6 @@ import BaseButton from "../base/BaseButton.vue";
 import TrophyIcon from "../icons/TrophyIcon.vue";
 import { ref } from "vue";
 import { DifficultyName } from "../types/types";
-import { vConfetti } from "@neoconfetti/vue";
 
 const { score, difficulty } = defineProps<{
   score: number;
