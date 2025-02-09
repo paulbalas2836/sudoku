@@ -120,7 +120,7 @@ const selectedLevel = ref<DifficultyName | null>(null);
 
 const errorPositions = ref<Map<string, CellPosition>>(new Map());
 
-const score = ref<number>(100);
+const score = ref<number>(0);
 
 const undoRedoLinkedList = ref<GameHistory>(new GameHistory());
 
