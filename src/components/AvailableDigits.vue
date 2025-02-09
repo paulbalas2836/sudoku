@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4 mt-auto">
     <p class="self-start text-gray-600 font-medium">Available Digits:</p>
-    <div class="flex gap-3 flex-wrap justify-between">
+    <div class="flex gap-3 flex-wrap">
       <div
         v-for="(remaining, index) in availableDigits"
         :key="index"

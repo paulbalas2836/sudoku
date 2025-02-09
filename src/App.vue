@@ -116,17 +116,17 @@ const remainingHints = ref<number>(DEFAULT_HINTS);
 const sudokuBoardInstance = new Sudoku();
 const initialBoard = ref<Cell[][]>(sudokuBoardInstance.getInitialBoard());
 const board = ref<Cell[][]>(sudokuBoardInstance.getInitialBoard());
-const selectedLevel = ref<DifficultyName | null>("Beginner");
+const selectedLevel = ref<DifficultyName | null>(null);
 
 const errorPositions = ref<Map<string, CellPosition>>(new Map());
 
-const score = ref<number>(0);
+const score = ref<number>(100);
 
 const undoRedoLinkedList = ref<GameHistory>(new GameHistory());
 
 const isDraft = ref<boolean>(false);
 
-const showEndGameModal = ref<boolean>(true);
+const showEndGameModal = ref<boolean>(false);
 
 const completedArea = ref<CompletedAreaType>({
   column: -1,
