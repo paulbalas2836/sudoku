@@ -418,7 +418,10 @@ function updateSudokuBoard(row: number, column: number, value: number): void {
 
   if (value === initialBoard.value[row][column].value) {
     // 5 points / right guess
-    score.value += 5;
+    if (!board.value[row][column].filled) {
+      board.value[row][column].filled = true;
+      score.value += 5;
+    }
 
     //clear error map if any error
     clearError(row, column);
@@ -429,7 +432,9 @@ function updateSudokuBoard(row: number, column: number, value: number): void {
   addError(value, row, column);
 
   // -1 point / mistake
-  score.value--;
+  if (!board.value[row][column].filled) {
+    score.value--;
+  }
 }
 
 /**

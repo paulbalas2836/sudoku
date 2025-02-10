@@ -19,6 +19,7 @@ export function createBoard(): Cell[][] {
       initial: true,
       hint: false,
       draftValue: 0,
+      filled: false,
     }))
   );
 }

@@ -144,10 +144,10 @@ async function submitScore(): Promise<void> {
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
-
-    emit("start-new");
   } catch (e) {
     console.error("Error fetching leaderboard data:", e);
+  } finally {
+    emit("start-new");
   }
 }
 </script>

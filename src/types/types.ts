@@ -15,6 +15,7 @@ export type Cell = {
   initial: boolean;
   hint: boolean;
   draftValue: number;
+  filled: boolean;
 };
 
 export type CellPosition = {

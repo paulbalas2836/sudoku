@@ -26,3 +26,6 @@ build/
 *.sw?
 *.tmp
 .env
+
+*.vue.js
+*.vue.js.map
