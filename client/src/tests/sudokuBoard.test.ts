@@ -100,6 +100,7 @@ describe("Sudoku Class", () => {
           initial: true,
           hint: false,
           draftValue: 0,
+          filled: false,
         }))
       );
 
