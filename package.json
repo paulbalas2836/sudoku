@@ -13,10 +13,12 @@
     "@neoconfetti/vue": "^2.2.1",
     "@tailwindcss/vite": "^4.0.3",
     "gsap": "^3.12.7",
+    "rollup": "^4.34.6",
     "tailwindcss": "^4.0.3",
     "vue": "^3.5.13"
   },
   "devDependencies": {
+    "@types/node": "^22.13.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "typescript": "~5.7.2",
