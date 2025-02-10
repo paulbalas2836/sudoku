@@ -118,7 +118,6 @@ const cells = ref<HTMLDivElement[]>([]);
 watch(
   () => board,
   () => {
-    //grid layout will inverse how we see the board
     for (let i = 0; i < board.length; ++i) {
       if (
         !prevCompletedAreas.column.length ||
@@ -179,7 +178,7 @@ watch(
 );
 
 /**
- * Animates the sudoku board in sequence upon line, column or scoare completion.
+ * Animates the sudoku board in sequence upon line, column or square completion.
  *
  * @param {HTMLDivElement[]} list - The list of div elements to animate.
  * @param {AreaType} area - The area type associated with the animation.

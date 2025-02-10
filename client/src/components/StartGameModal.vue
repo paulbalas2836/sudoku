@@ -49,7 +49,7 @@ import { DifficultyLevel, DifficultyName } from "../types/types";
 import Modal from "../base/Modal.vue";
 import BaseButton from "../base/BaseButton.vue";
 
-const emit = defineEmits<{
+defineEmits<{
   (event: "select", difficulty: DifficultyName): void;
 }>();
 

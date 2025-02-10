@@ -143,22 +143,20 @@ const prevCompletedAreas = ref<PrevCompletedAreasType>({
 const leaderboard = ref<LeaderboardType[]>([]);
 
 /**
- * Updates the completed area by setting its value.
+ * Updates the current completed area.
  *
  * @param {AreaType} area - The area type to update.
  * @param {number} value - The value to set for the specified area.
- * @returns {void}
  */
 function updateCompletedArea(area: AreaType, value: number): void {
   completedArea.value[area] = value;
 }
 
 /**
- * Updates the previous completed areas by appending a value to the specified area.
+ * Updates the previous completed areas
  *
  * @param {AreaType} area - The area type to update.
  * @param {number} value - The value to append to the specified area's array.
- * @returns {void}
  */
 function updatePrevCompletedAreas(area: AreaType, value: number): void {
   prevCompletedAreas.value[area].push(value);
@@ -287,7 +285,7 @@ function takeHint(): void {
 
   remainingHints.value--;
 
-  //take a random cell position and we search for the next/previous open or wrong cell and correct it
+  //take a random cell position and search for the next/previous open or wrong cell and correct it
   const randomRow = generateRandomNumber(0, 8);
   const randomCol = generateRandomNumber(0, 8);
 
@@ -401,7 +399,7 @@ function updateSudokuBoard(row: number, column: number, value: number): void {
   const draftValue = isDraft.value ? value : 0;
   const actualValue = isDraft.value ? 0 : value;
 
-  //we add the cell to the undo linked list
+  // Add the cell to the undo linked list
   undoRedoLinkedList.value.addNode(
     actualValue,
     row,
@@ -414,13 +412,13 @@ function updateSudokuBoard(row: number, column: number, value: number): void {
 
   updateBoard(actualValue, row, column, draftValue, isDraft.value);
 
-  // we don't want to change the score or add errors if it's in draft mode
+  // Score and errors list don't change if it's in draft mode
   if (isDraft.value) {
     return;
   }
 
   if (value === initialBoard.value[row][column].value) {
-    // 5 points / right guess
+    // 5 points / right guess - works only the first time you select the correct value
     if (!board.value[row][column].filled) {
       board.value[row][column].filled = true;
       score.value += 5;
@@ -434,7 +432,7 @@ function updateSudokuBoard(row: number, column: number, value: number): void {
   // add error if any mistake has been found
   addError(value, row, column);
 
-  // -1 point / mistake
+  // -1 point / mistake - works as long as the correct value hasn't been found
   if (!board.value[row][column].filled) {
     score.value--;
   }
@@ -477,10 +475,10 @@ function undoAction() {
   }
 
   const { row, column, draft, prevValue, prevDraft } = prevNode;
-  //we clear the board, in case it's a draft we will clear the draft value too, we always clear the actual value since you cannot add a draft value over it.
+  //Clear the board, in case it's a draft it will clear the draft value too, it always clear the actual value since you cannot add a draft value over it.
   updateBoard(prevValue, row, column, prevDraft, draft);
 
-  // we clear the error if we had any on that position.
+  // Clear the error if there is any on that position.
   clearError(row, column);
 
   if (prevValue !== 0) {

@@ -36,8 +36,21 @@ const poolConfig: PoolConfig = {
 
 const pool = new Pool(poolConfig);
 
+// Create the database if it doesn't exist
+const createDatabase = async (): Promise<void> => {
+  const dbName = config.POSTGRES_DB;
+  const createDbQuery = `CREATE DATABASE IF NOT EXISTS ${dbName};`;
+
+  try {
+    await pool.query(createDbQuery);
+    console.log(`Database ${dbName} is ready.`);
+  } catch (error) {
+    console.error("Error creating database:", error);
+  }
+};
+
 // Create leaderboard table if it doesn't exist
-const createLeaderboardTable = async () => {
+const createLeaderboardTable = async (): Promise<void> => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS leaderboard (
       id SERIAL PRIMARY KEY,
@@ -55,7 +68,12 @@ const createLeaderboardTable = async () => {
   }
 };
 
-// Run the query when the server starts
-createLeaderboardTable();
+// Run the queries when the server starts
+const initializeDatabase = async (): Promise<void> => {
+  await createDatabase();
+  await createLeaderboardTable();
+};
+
+initializeDatabase();
 
 export { pool };
