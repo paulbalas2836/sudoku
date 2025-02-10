@@ -133,13 +133,16 @@ async function submitScore(): Promise<void> {
 
     addToStorage(data, difficulty);
 
-    const response = await fetch("http://localhost:3000/api/add-user", {
-      method: "Post",
-      body: JSON.stringify(data),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `http://localhost:${import.meta.env.VITE_POSTGRES_PORT}/api/add-user`,
+      {
+        method: "Post",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);

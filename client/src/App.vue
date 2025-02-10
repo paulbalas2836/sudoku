@@ -206,9 +206,12 @@ function handleVisibilityChange(): void {
  */
 async function getLeaderboard(): Promise<void> {
   try {
-    const response = await fetch("http://localhost:3000/api/top3", {
-      method: "GET",
-    });
+    const response = await fetch(
+      `http://localhost:${import.meta.env.VITE_POSTGRES_PORT}/api/top3`,
+      {
+        method: "GET",
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);

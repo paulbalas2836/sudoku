@@ -1,3 +1,18 @@
+# Environment files
+.env
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.tmp
+
 # Logs
 logs
 *.log
@@ -13,19 +28,6 @@ dist-ssr
 *.local
 /data/
 build/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-*.tmp
-.env
 
 dist/
 *.vue.js
