@@ -1,5 +1,10 @@
 import { Cell } from "../types/types";
 
+/**
+ * Creates a deep copy of a given value.
+ * @param {T} value - The value to be deep-copied.
+ * @returns {T} A new deep copy of the value.
+ */
 export function deepCopy<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map((item) => deepCopy(item)) as T;
@@ -12,6 +17,10 @@ export function deepCopy<T>(value: T): T {
   return value;
 }
 
+/**
+ * Creates a 9x9 Sudoku board with default cell values.
+ * @returns {Cell[][]} A 2D array representing the Sudoku board.
+ */
 export function createBoard(): Cell[][] {
   return Array.from({ length: 9 }, () =>
     Array.from({ length: 9 }, () => ({
@@ -24,6 +33,12 @@ export function createBoard(): Cell[][] {
   );
 }
 
+/**
+ * Generates a random integer between a given minimum and maximum.
+ * @param {number} min - The minimum value (inclusive).
+ * @param {number} max - The maximum value (inclusive).
+ * @returns {number} A random number between min and max, or -1 if max < min.
+ */
 export function generateRandomNumber(min: number, max: number): number {
   if (max < min) {
     return -1;

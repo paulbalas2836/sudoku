@@ -53,7 +53,7 @@ export class GameHistory {
     this.length++;
     this.currentPosition = this.length;
 
-    //we will free the memory by removing the link between old nodes
+    //Free the memory by removing the link between old nodes
     if (this.current.next) {
       this.current.next.prev = undefined;
     }
@@ -74,14 +74,14 @@ export class GameHistory {
   }
 
   /**
-   * Moves the `current` pointer back to the previous node, effectively undoing the last action.
+   * Moves the `current` pointer back to the previous node, undoing the last action.
    * If there is no previous node, the function returns `undefined`, indicating no undo is possible.
    *
    * @returns {CellPositionWithValue | undefined} - The cell position and value of the undone element,
    * or `undefined` if there is no previous action to undo.
    */
   undo(): CellPositionWithValue | undefined {
-    // we have no value to undo
+    // No value to undo
     if (!this.current.prev) {
       return;
     }
@@ -95,14 +95,14 @@ export class GameHistory {
   }
 
   /**
-   * Moves the `current` pointer back to the next node, effectively redoing the last undo action.
+   * Moves the `current` pointer back to the next node, redoing the last undo action.
    * If there is no next node, the function returns `undefined`, indicating no redo is possible.
    *
    * @returns {CellPositionWithValue | undefined} - The cell position and value of the redo element,
    * or `undefined` if there is no last action to redo.
    */
   redo(): CellPositionWithValue | undefined {
-    // we have no value to redo
+    // No value to redo
     if (!this.current.next) {
       return;
     }

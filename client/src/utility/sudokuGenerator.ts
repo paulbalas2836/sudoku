@@ -20,7 +20,7 @@ export class Sudoku {
   }
 
   /**
-   * Checks if a given number can be placed in the specified cell without violating Sudoku rules.
+   * Checks if a given number can be placed in the specified cell without breaking Sudoku rules.
    * @param {Cell[][]} board - The current Sudoku board.
    * @param {number} row - The row index.
    * @param {number} column - The column index.
