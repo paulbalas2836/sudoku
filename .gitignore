@@ -27,5 +27,6 @@ build/
 *.tmp
 .env
 
+dist/
 *.vue.js
 *.vue.js.map
