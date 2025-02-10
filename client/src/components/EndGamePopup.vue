@@ -36,7 +36,7 @@
             @click="submitScore"
             variant="secondary"
             class="w-full text-white font-medium bg-green-600 hover:bg-green-700 py-3 rounded-md transition-colors"
-            :disabled="showUserError"
+            :disabled="showUserError || loading"
           >
             Submit score
           </BaseButton>
@@ -70,7 +70,7 @@ const emit = defineEmits<{
 
 const username = ref<string>("");
 const showUserError = ref<boolean>(false);
-
+const loading = ref<boolean>(false);
 /**
  * Displays an error if the username is empty
  */
@@ -123,7 +123,7 @@ async function submitScore(): Promise<void> {
     showUserError.value = true;
     return;
   }
-
+  loading.value = true;
   try {
     const data: TopUserType = {
       name: username.value,
@@ -151,6 +151,7 @@ async function submitScore(): Promise<void> {
     console.error("Error fetching leaderboard data:", e);
   } finally {
     emit("start-new");
+    loading.value = false;
   }
 }
 </script>

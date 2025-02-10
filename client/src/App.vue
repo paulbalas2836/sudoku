@@ -233,6 +233,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+  if (intervalReference.value) {
+    clearInterval(intervalReference.value);
+  }
 });
 
 /**
