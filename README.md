@@ -6,7 +6,27 @@ A full-stack Sudoku game built with a client-server architecture.
 
 This project requires **two `.env` files**:
 1. **Root `.env` file** (for the server) - Contains database configuration and connection details.
-2. **Client `.env` file** - Defines the server port for the frontend.
+POSTGRES_USER=
+
+POSTGRES_PASSWORD=
+
+POSTGRES_HOST=
+
+POSTGRES_PORT=
+
+SERVER_PORT=
+
+POSTGRES_DB=
+
+POSTGRES_MAX=
+
+POSTGRES_MIN=
+
+POSTGRES_IDLE_TIMEOUT=
+
+3. **Client `.env` file** - Defines the server port for the frontend.
+
+ VITE_POSTGRES_PORT=3001
 
 ## 🚀 Getting Started
 
