@@ -2,40 +2,6 @@
 
 A full-stack Sudoku game built with a client-server architecture.
 
-## 📂 Project Setup
-
-This project requires **two `.env` files**:
-1. **Root `.env` file** (for the server) - Contains database configuration and connection details.
-POSTGRES_USER=
-
-POSTGRES_PASSWORD=
-
-POSTGRES_HOST=
-
-POSTGRES_PORT=
-
-SERVER_PORT=
-
-POSTGRES_DB=
-
-POSTGRES_MAX=
-
-POSTGRES_MIN=
-
-POSTGRES_IDLE_TIMEOUT=
-
-3. **Client `.env` file** - Defines the server port for the frontend.
-
- VITE_POSTGRES_PORT=3001
-
-## 🚀 Getting Started
-
-  npm install
-  
-  npm run dev -> to run both the client and the server
-  
-  docker-compose build / run -> to run the docker
-
 # Sudoku Rules
 
 - **Unique Solutions**:  
