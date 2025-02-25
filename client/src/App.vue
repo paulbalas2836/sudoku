@@ -44,6 +44,7 @@
         @update-completed-area="updateCompletedArea"
         @update-prev-completed-areas="updatePrevCompletedAreas"
         @update-board="updateSudokuBoard"
+        @reset-undo-redo="resetUndoRedo"
       ></SudokuBoard>
       <div class="flex flex-col gap-2 sm:gap-4">
         <div class="hidden sm:block">
@@ -276,8 +277,8 @@ function startNewGame(): void {
   isDraft.value = false;
   score.value = 0;
   errorPositions.value.clear();
-  undoRedoLinkedList.value = new GameHistory();
 
+  resetUndoRedo();
   getLeaderboard();
 }
 
@@ -504,40 +505,6 @@ function updateBoard(
 }
 
 /**
- * Removes a completed area (row, column, or square) after an undo operation.
- *
- * @param {number} row - The row index of the undone action.
- * @param {number} column - The column index of the undone action.
- */
-function removeCompletedAreaAfterUndo(row: number, column: number) {
-  const completedLineIndex = prevCompletedAreas.value.line.findIndex(
-    (el) => el === column
-  );
-
-  if (completedLineIndex !== -1) {
-    prevCompletedAreas.value.line.splice(completedLineIndex, 1);
-    completedArea.value.line = -1;
-  }
-  const completedColumnIndex = prevCompletedAreas.value.column.findIndex(
-    (el) => el === row
-  );
-
-  if (completedColumnIndex !== -1) {
-    prevCompletedAreas.value.column.splice(completedColumnIndex, 1);
-    completedArea.value.column = -1;
-  }
-
-  const squarePosition = Math.floor(row / 3) * 3 + Math.floor(column / 3);
-  const completedSquareIndex = prevCompletedAreas.value.square.findIndex(
-    (el) => el === squarePosition
-  );
-  if (completedSquareIndex !== -1) {
-    prevCompletedAreas.value.square.splice(completedSquareIndex, 1);
-    completedArea.value.square = -1;
-  }
-}
-
-/**
  * Undoes the last action by reverting the board to its previous state.
  * If there is no action to undo, the function does nothing.
  */
@@ -554,7 +521,6 @@ function undoAction() {
   const { row, column, draft, prevValue, prevDraft } = prevNode;
   //Clear the board, in case it's a draft it will clear the draft value too, it always clear the actual value since you cannot add a draft value over it.
   updateBoard(prevValue, row, column, prevDraft, draft);
-  removeCompletedAreaAfterUndo(row, column);
 
   // Clear the error if there is any on that position.
   clearError(row, column);
@@ -608,5 +574,12 @@ function endGame(): void {
 
   //stop the timer
   clearInterval(intervalReference.value);
+}
+
+/**
+ * Resets the undo/redo linked list by calling the resetList method.
+ */
+function resetUndoRedo() {
+  undoRedoLinkedList.value.resetList();
 }
 </script>

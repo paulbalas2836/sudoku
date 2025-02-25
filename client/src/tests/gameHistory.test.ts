@@ -187,5 +187,16 @@ describe("GameHistory", () => {
       expect(gameHistory.canUndo()).toBe(true);
       expect(gameHistory.canRedo()).toBe(false);
     });
+
+    it("should reset the list correctly", () => {
+      gameHistory.addNode(1, 0, 0, 0, false, 1, 0);
+      gameHistory.addNode(2, 1, 1, 1, true, 0, 0);
+
+      gameHistory.resetList();
+
+      expect(gameHistory.currentPosition).toBe(0);
+      expect(gameHistory.length).toBe(0);
+      expect(gameHistory.current).toBeInstanceOf(ListNode);
+    });
   });
 });

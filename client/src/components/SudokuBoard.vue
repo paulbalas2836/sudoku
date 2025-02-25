@@ -55,6 +55,7 @@ const emit = defineEmits<{
   (event: "update-completed-area", area: AreaType, value: number): void;
   (event: "update-prev-completed-areas", area: AreaType, value: number): void;
   (event: "update-current-selected-cell", value: CellPosition | null): void;
+  (event: "reset-undo-redo"): void;
 }>();
 
 /**
@@ -238,6 +239,8 @@ function animate(list: HTMLDivElement[], area: AreaType, value: number) {
   timeline.play();
 
   emit("update-prev-completed-areas", area, value);
+  //after we complete a section, we will reset the undo-redo list
+  emit("reset-undo-redo");
 }
 
 /**

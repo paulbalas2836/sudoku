@@ -128,4 +128,13 @@ export class GameHistory {
   canRedo(): boolean {
     return this.currentPosition < this.length;
   }
+
+  /**
+   * Resets the list by setting the current position to zero, resetting the length to zero, and initializing a new empty ListNode.
+   */
+  resetList(): void {
+    this.currentPosition = 0;
+    this.length = 0;
+    this.current = new ListNode();
+  }
 }
