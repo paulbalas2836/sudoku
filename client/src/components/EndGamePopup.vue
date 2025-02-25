@@ -104,7 +104,6 @@ function addToStorage(data: TopUserType, difficulty: DifficultyName): void {
       key: difficulty,
       list: [data],
     };
-    console.log(newSection);
     parsedLeaderboard.push(newSection);
 
     localStorage.setItem("leaderboard", JSON.stringify(parsedLeaderboard));

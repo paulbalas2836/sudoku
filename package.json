@@ -5,6 +5,7 @@
         "preinstall": "cd client && npm install && cd ../server && npm install",
         "client": "cd client && npm run dev",
         "server": "cd server && npm run server",
+        "test": "cd client && npm run test",
         "dev": "concurrently \"npm run server\" \"npm run client\""
     },
     "devDependencies": {

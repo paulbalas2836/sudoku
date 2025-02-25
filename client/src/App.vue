@@ -39,6 +39,8 @@
         :error-positions="errorPositions"
         :completed-area="completedArea"
         :prev-completed-areas="prevCompletedAreas"
+        :current-selected-cell="currentSelectedCell"
+        @update-current-selected-cell="updateCurrentSelectedCell"
         @update-completed-area="updateCompletedArea"
         @update-prev-completed-areas="updatePrevCompletedAreas"
         @update-board="updateSudokuBoard"
@@ -127,6 +129,7 @@ const undoRedoLinkedList = ref<GameHistory>(new GameHistory());
 const isDraft = ref<boolean>(false);
 
 const showEndGameModal = ref<boolean>(false);
+const currentSelectedCell = ref<CellPosition | null>(null);
 
 const completedArea = ref<CompletedAreaType>({
   column: -1,
@@ -279,7 +282,17 @@ function startNewGame(): void {
 }
 
 /**
+ * Updates the currently selected cell position.
+ *
+ * @param {CellPosition | null} value - The new cell position to set, or null to deselect.
+ */
+function updateCurrentSelectedCell(value: CellPosition | null): void {
+  currentSelectedCell.value = value;
+}
+
+/**
  * Uses a hint to reveal a correct number in the Sudoku board.
+ * If a cell is selected, it attempts to correct it; otherwise, it takes a random hint.
  * Reduces the number of available hints and updates the score.
  */
 function takeHint(): void {
@@ -289,6 +302,35 @@ function takeHint(): void {
 
   remainingHints.value--;
 
+  // update score
+  score.value -= DEFAULT_HINTS - remainingHints.value + 2;
+
+  // Get the current selected cell as hint otherwise, if no cell is selected take a random hint.
+  if (currentSelectedCell.value) {
+    const row = currentSelectedCell.value.row;
+    const col = currentSelectedCell.value.column;
+    const key = `${row}${col}`;
+    const hasError = key ? !!errorPositions.value.has(key) : false;
+
+    //If the board already has a value and the value is not an error get the hint. Otherwise get a random hint.
+    if (!board.value[row][col].value || hasError) {
+      board.value[row][col].value = initialBoard.value[row][col].value;
+      board.value[row][col].hint = true;
+
+      if (hasError && key) {
+        errorPositions.value.delete(key);
+      }
+      return;
+    }
+  }
+
+  takeRandomHint();
+}
+
+/**
+ * Takes a random hint by selecting a random cell and attempting to correct it.
+ */
+function takeRandomHint(): void {
   //take a random cell position and search for the next/previous open or wrong cell and correct it
   const randomRow = generateRandomNumber(0, 8);
   const randomCol = generateRandomNumber(0, 8);
@@ -298,9 +340,6 @@ function takeHint(): void {
     // If nothing found, try correcting in the reverse direction
     correctNextCell(randomRow, randomCol, false);
   }
-
-  // update score
-  score.value -= DEFAULT_HINTS - remainingHints.value + 2;
 }
 
 /**
@@ -465,6 +504,40 @@ function updateBoard(
 }
 
 /**
+ * Removes a completed area (row, column, or square) after an undo operation.
+ *
+ * @param {number} row - The row index of the undone action.
+ * @param {number} column - The column index of the undone action.
+ */
+function removeCompletedAreaAfterUndo(row: number, column: number) {
+  const completedLineIndex = prevCompletedAreas.value.line.findIndex(
+    (el) => el === column
+  );
+
+  if (completedLineIndex !== -1) {
+    prevCompletedAreas.value.line.splice(completedLineIndex, 1);
+    completedArea.value.line = -1;
+  }
+  const completedColumnIndex = prevCompletedAreas.value.column.findIndex(
+    (el) => el === row
+  );
+
+  if (completedColumnIndex !== -1) {
+    prevCompletedAreas.value.column.splice(completedColumnIndex, 1);
+    completedArea.value.column = -1;
+  }
+
+  const squarePosition = Math.floor(row / 3) * 3 + Math.floor(column / 3);
+  const completedSquareIndex = prevCompletedAreas.value.square.findIndex(
+    (el) => el === squarePosition
+  );
+  if (completedSquareIndex !== -1) {
+    prevCompletedAreas.value.square.splice(completedSquareIndex, 1);
+    completedArea.value.square = -1;
+  }
+}
+
+/**
  * Undoes the last action by reverting the board to its previous state.
  * If there is no action to undo, the function does nothing.
  */
@@ -481,6 +554,7 @@ function undoAction() {
   const { row, column, draft, prevValue, prevDraft } = prevNode;
   //Clear the board, in case it's a draft it will clear the draft value too, it always clear the actual value since you cannot add a draft value over it.
   updateBoard(prevValue, row, column, prevDraft, draft);
+  removeCompletedAreaAfterUndo(row, column);
 
   // Clear the error if there is any on that position.
   clearError(row, column);

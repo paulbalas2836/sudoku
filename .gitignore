@@ -32,3 +32,4 @@ build/
 dist/
 *.vue.js
 *.vue.js.map
+.vercel
